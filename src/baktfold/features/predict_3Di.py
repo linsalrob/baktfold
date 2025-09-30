@@ -318,7 +318,7 @@ def write_probs(
         
     if output_path_all is not None:
         with open(output_path_all, "w+") as out_f:
-            
+
             for seq_id, (N, N, all_probs) in predictions.items():
                 # * 100
                 all_probs = all_probs * 100
@@ -675,7 +675,6 @@ def get_embeddings(
     else:
         all_probs_out_path = None
 
-    
     write_probs(predictions, mean_probs_out_path, all_probs_out_path)
 
     return predictions

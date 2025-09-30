@@ -18,7 +18,6 @@ def run_foldseek_search(
     extra_foldseek_params: str,
     foldseek_gpu: bool,
     structures: bool,
-    clustered_db: bool
 ) -> None:
     """
     Run a Foldseek search using given parameters.
@@ -37,7 +36,6 @@ def run_foldseek_search(
         extra_foldseek_params (str): Extra foldseek search params
         foldseek_gpu (bool): Run Foldseek-GPU with accelerate ungapped prefilter
         structures (bool): Run Foldseek with structures, not ProstT5 3Dis
-        clustered_db (bool): Run Foldseek with clustered DB (for benchmarking)
 
     Returns:
         None
@@ -61,10 +59,6 @@ def run_foldseek_search(
     if structures:
         cmd += f" -a 1"
 
-    if clustered_db:
-       cmd += f" --cluster-search 1"
-
-
     foldseek_search = ExternalTool(
         tool="foldseek",
         input=f"",
@@ -77,54 +71,6 @@ def run_foldseek_search(
 
 
 
-# def run_foldseek_align(
-#     query_db: Path,
-#     target_db: Path,
-#     result_db: Path,
-#     temp_db: Path,
-#     aln_db: Path,
-#     threads: int,
-#     logdir: Path,
-#     foldseek_gpu: bool
-# ) -> None:
-#     """
-#     Run a Foldseek align using given parameters.
-
-#     foldseek align test_str/foldseek_db/baktfold ../../baktfold_db_v1_updated_annots_no_phrog_hits/all_baktfold_structures test_str/result_db/result_db alnNew -a
-
-#     Args:
-#         query_db (Path): Path to the query database.
-#         target_db (Path): Path to the target database.
-#         result_db (Path): Path to store the result database.
-#         temp_db (Path): Path to store temporary files.
-#         threads (int): Number of threads to use for the search.
-#         logdir (Path): Path to the directory where logs will be stored.
-#         evalue (float): E-value threshold for the search.
-#         sensitivity (float): Sensitivity threshold for the search.
-#         max_seqs (int): Maximum results per query sequence allowed to pass the prefilter for foldseek.
-#         ultra_sensitive (bool): Whether to skip foldseek prefilter for maximum sensitivity
-#         extra_foldseek_params (str): Extra foldseek search params
-#         foldseek_gpu (bool): Run Foldseek-GPU with accelerate ungapped prefilter
-
-#     Returns:
-#         None
-#     """
-
-#     if foldseek_gpu:
-#         target_db = f"{target_db}_gpu"
-
-#     cmd = f"align {query_db} {target_db} {result_db} {aln_db} --threads {str(threads)} -a"
-
-
-#     foldseek_search = ExternalTool(
-#         tool="foldseek",
-#         input=f"",
-#         output=f"",
-#         params=f"{cmd}",
-#         logdir=logdir,
-#     )
-
-#     ExternalTool.run_tool(foldseek_search)
 
 def create_result_tsv(
     query_db: Path, target_db: Path, result_db: Path, result_tsv: Path, logdir: Path, foldseek_gpu: bool, structures: bool, threads: int

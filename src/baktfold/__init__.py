@@ -327,34 +327,28 @@ def run(
 
     # predictions_dir is output as this will be where it lives
 
-    # subcommand_compare(
-    #     gb_dict,
-    #     output,
-    #     threads,
-    #     evalue,
-    #     card_vfdb_evalue,
-    #     sensitivity,
-    #     database,
-    #     prefix,
-    #     predictions_dir=output,
-    #     structures=False,
-    #     structure_dir=None,
-    #     logdir=logdir,
-    #     filter_structures=False,
-    #     remote_flag=True,
-    #     proteins_flag=False,
-    #     fasta_flag=fasta_flag,
-    #     separate=separate,
-    #     max_seqs=max_seqs,
-    #     ultra_sensitive=ultra_sensitive,
-    #     extra_foldseek_params=extra_foldseek_params,
-    #     custom_db=custom_db,
-    #     foldseek_gpu=foldseek_gpu,
-    # )
+    subcommand_compare(
+        output,
+        threads,
+        evalue,
+        sensitivity,
+        database,
+        prefix,
+        predictions_dir=output,
+        structures=False,
+        structure_dir=None,
+        logdir=logdir,
+        proteins_flag=False,
+        max_seqs=max_seqs,
+        ultra_sensitive=ultra_sensitive,
+        extra_foldseek_params=extra_foldseek_params,
+        custom_db=custom_db,
+        foldseek_gpu=foldseek_gpu,
+    )
 
-    # cleanup the temp files
-    if keep_tmp_files is False:
-        clean_up_temporary_files(output)
+    # # cleanup the temp files
+    # if keep_tmp_files is False:
+    #     clean_up_temporary_files(output)
 
     # end baktfold
     end_baktfold(start_time, "run")
