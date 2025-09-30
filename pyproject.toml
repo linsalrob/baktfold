@@ -1,0 +1,81 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=61.0", "wheel>=0.37.1"]
+
+[project]
+# https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
+name = "baktfold"
+version = "0.0.1" # change VERSION too
+description = "Rapid and standardized annotation of bacterial genomes, MAGs and plasmids using protein structural information"
+readme = "README.md"
+requires-python = ">=3.8, <4"
+license = {file = "MIT"}
+authors = [
+    {name = "George Bouras", email = "george.bouras@adelaide.edu.au"},
+    {name = "Oliver Schwengers", email = "oliver.schwengers@cb.jlug.de"}
+]
+keywords = ["keyword", "are", "cool"]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14"
+]
+
+dependencies = [
+        "click >=8.0.0",
+        "loguru >=0.5.3",
+        "pyyaml >=6.0",
+        "pandas >=1.4.2",
+        "biopython >=1.80",
+        "datasets >=2.15",
+        "requests >=2.25",
+        "sentencepiece >=0.1.99",
+        "transformers >=4.34",
+        "torch >=2.1.2",
+        "pyarrow >=14.0.0",
+        "alive-progress >=3.0.1",
+        "numpy >=1.20,<2",
+        "h5py >=3.5",
+        "tqdm >=4.35.0",
+        "xopen >= 1.5.0"
+    ]
+
+[project.scripts]
+baktfold = 'baktfold:main'
+
+[project.urls]
+"Homepage" = "https://github.com/gbouras13/baktfold"
+"Documentation" = "https://baktfold.readthedocs.io/en/latest"
+
+
+[project.optional-dependencies]
+lint = [
+    "isort",
+    "black"
+]
+test = ["pytest>=6.2.5",
+"pytest-cov >=3.0.0"]
+exe = [
+    "setuptools",
+    "wheel",
+    "build",
+]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = true  # This just means it's safe to zip up the bdist
+
+
