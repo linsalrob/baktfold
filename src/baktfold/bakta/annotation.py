@@ -52,8 +52,6 @@ def combine_annotation(feature: dict):
     product = feature.get('product', None)
     db_xrefs = feature.get('db_xrefs', set())
 
-    # print(feature)
-    print(pstc)
 
     if(pstc):
         # Always normalize pstc to a list
@@ -111,6 +109,8 @@ def combine_annotation(feature: dict):
             if(cfg.compliant):
                 product = insdc.revise_product_insdc(product)
             feature['product'] = product
+
+            print(feature)
 
             unmark_as_hypothetical(feature)
         
@@ -326,7 +326,8 @@ def unmark_as_hypothetical(feature: dict):
         'unmarked as hypothetical: seq=%s, start=%i, stop=%i, strand=%s',
         feature['sequence'], feature['start'], feature['stop'], feature['strand']
     )
-    feature['hypothetical'] = False
+    feature.pop('hypothetical', None)  # remove completely
+
 
 
 # def get_adjacent_genes(feature: dict, features: Sequence[dict], neighbors=3):

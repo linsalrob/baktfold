@@ -437,7 +437,7 @@ def run(
     tsv_path: Path = Path(output) / f"{prefix}.inference.tsv"
     tsv.write_feature_inferences(data['sequences'], features_by_sequence, tsv_path)
 
-
+    cfg.skip_cds = False
     if(cfg.skip_cds is False):
         hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat]
         print('\thypothetical TSV...')
