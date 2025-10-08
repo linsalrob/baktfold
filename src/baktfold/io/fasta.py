@@ -1,4 +1,4 @@
-import logging
+from loguru import logger
 import re
 
 from pathlib import Path
@@ -32,18 +32,18 @@ def import_sequences(sequences_path: Path, is_genomic: bool=True, is_dna: bool=T
             if('-' in raw_sequence):
                 dash_count = raw_sequence.count('-')
                 raw_sequence = raw_sequence.replace('-', '')
-                log.info('import: Discarded alignment gaps (dashes): id=%s, occurences=%i', record.id, dash_count)
+                logger.info('import: Discarded alignment gaps (dashes): id=%s, occurences=%i', record.id, dash_count)
             if(is_dna):
                 if(FASTA_DNA_SEQUENCE_PATTERN.fullmatch(raw_sequence) is None):
-                    log.error('import: Fasta sequence contains invalid DNA characters! id=%s', record.id)
+                    logger.error('import: Fasta sequence contains invalid DNA characters! id=%s', record.id)
                     raise ValueError(f'Fasta sequence contains invalid DNA characters! id={record.id}')
                 sequence['nt'] = raw_sequence
             else:
                 if(raw_sequence[-1] == '*'):  # remove trailing stop asterik
                     raw_sequence = raw_sequence[:-1]
-                    log.debug('import: Removed trailing asterik! id=%s, seq=%s', record.id, raw_sequence)
+                    logger.warning('import: Removed trailing asterik! id=%s, seq=%s', record.id, raw_sequence)
                 if(FASTA_AA_SEQUENCE_PATTERN.fullmatch(raw_sequence) is None):
-                    log.error('import: Fasta sequence contains invalid AA characters! id=%s, seq=%s', record.id, raw_sequence)
+                    logger.error('import: Fasta sequence contains invalid AA characters! id=%s, seq=%s', record.id, raw_sequence)
                     raise ValueError(f'Fasta sequence contains invalid AA characters! id={record.id}')
                 sequence['aa'] = raw_sequence
             sequence['length'] = len(raw_sequence)
@@ -51,7 +51,7 @@ def import_sequences(sequences_path: Path, is_genomic: bool=True, is_dna: bool=T
                 sequence['complete'] = False
                 sequence['type'] = bc.REPLICON_CONTIG
                 sequence['topology'] = bc.TOPOLOGY_LINEAR
-            log.info(
+            logger.info(
                 'imported: id=%s, length=%i, description=%s, genomic=%s, dna=%s',
                 sequence['id'], sequence['length'], sequence['description'], is_genomic, is_dna
             )
@@ -61,7 +61,7 @@ def import_sequences(sequences_path: Path, is_genomic: bool=True, is_dna: bool=T
 
 def export_sequences(sequences: Sequence[dict], fasta_path: Path, description: bool=False, wrap: bool=False):
     """Write sequences to Fasta file."""
-    log.info('write genome sequences: path=%s, description=%s, wrap=%s', fasta_path, description, wrap)
+    logger.info('write genome sequences: path=%s, description=%s, wrap=%s', fasta_path, description, wrap)
 
     with fasta_path.open('wt') as fh:
         for seq in sequences:
@@ -85,7 +85,7 @@ def wrap_sequence(sequence: str):
 
 def write_faa(features: Sequence[dict], faa_path: Path):
     """Write translated CDS sequences to Fasta file."""
-    log.info('write translated CDS/sORF: path=%s', faa_path)
+    logger.info('write translated CDS/sORF: path=%s', faa_path)
     with faa_path.open('wt') as fh:
         for feat in features:
             if(feat['type'] == bc.FEATURE_CDS or feat['type'] == bc.FEATURE_SORF):
@@ -94,7 +94,7 @@ def write_faa(features: Sequence[dict], faa_path: Path):
 
 def write_ffn(features: Sequence[dict], ffn_path: Path):
     """Write annotated nucleotide sequences to Fasta file."""
-    log.info('write feature nucleotide sequences: path=%s', ffn_path)
+    logger.info('write feature nucleotide sequences: path=%s', ffn_path)
     with ffn_path.open('wt') as fh:
         for feat in features:
             if(feat['type'] in [bc.FEATURE_T_RNA, bc.FEATURE_TM_RNA, bc.FEATURE_R_RNA, bc.FEATURE_NC_RNA, bc.FEATURE_NC_RNA_REGION, bc.FEATURE_CRISPR, bc.FEATURE_CDS, bc.FEATURE_SORF, bc.FEATURE_ORIC, bc.FEATURE_ORIV, bc.FEATURE_ORIT]):

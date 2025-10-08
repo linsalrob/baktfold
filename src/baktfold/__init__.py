@@ -11,6 +11,7 @@ from Bio.SeqFeature import FeatureLocation, SeqFeature
 from loguru import logger
 
 import baktfold.bakta.constants as bc
+import baktfold.bakta.annotation as anno
 from baktfold.bakta.json_io import parse_json_input
 from baktfold.databases.db import install_database, validate_db
 from baktfold.features.create_foldseek_db import generate_foldseek_db_from_aa_3di
@@ -23,7 +24,13 @@ from baktfold.utils.util import (begin_baktfold, clean_up_temporary_files, end_b
                               get_version, print_citation)
 from baktfold.utils.validation import (check_dependencies, instantiate_dirs,
                                     validate_input)
+
+import baktfold.bakta.config as cfg
 import baktfold.io.gff as gff
+import baktfold.io.tsv as tsv
+import baktfold.io.insdc as insdc
+import baktfold.io.fasta as fasta
+import baktfold.io.json as json
 
 log_fmt = (
     "[<green>{time:YYYY-MM-DD HH:mm:ss}</green>] <level>{level: <8}</level> | "
@@ -351,8 +358,14 @@ def run(
         foldseek_gpu=foldseek_gpu,
     )
 
-    combined_features = non_hypothetical_features + hypotheticals  # recombine
+    # update the hypotheticals 
 
+    for cds in hypotheticals:
+        anno.combine_annotation(cds)  # add on PSTC annotations and mark hypotheticals
+
+
+    combined_features = non_hypothetical_features + hypotheticals  # recombine
+    
     # Sort by ascending 'id'
     combined_features_sorted = sorted(combined_features, key=lambda x: x.get('id', ''))
 
@@ -377,16 +390,79 @@ def run(
         seq_features.sort(key=lambda k: k['start'])  # sort features by start position
         features.extend(seq_features)
 
+
+
+    # move this to a separate submodule
+ 
+
+
+    # logger.info('improve annotations...')
+    # genes_with_improved_symbols = anno.select_gene_symbols([feature for feature in features if feature['type'] in [bc.FEATURE_CDS, bc.FEATURE_SORF]])
+    # print(f'\trevised gene symbols: {len(genes_with_improved_symbols)}')
+
     # overwrite feature list with sorted features
     data['features'] = features
 
     logger.info('selected features=%i', len(features))
-    print(f'\tselected: {len(features)}')
 
+    logger.info('\thuman readable TSV...')
+    tsv_path: Path = Path(output) / f"{prefix}.tsv"
+    tsv.write_features(data['sequences'], features_by_sequence, tsv_path)
 
-    print('\tGFF3...')
+    logger.info('\tGFF3...')
     gff3_path: Path = Path(output) / f"{prefix}.gff3"
     gff.write_features(data, features_by_sequence, gff3_path)
+
+    logger.info('\tINSDC GenBank & EMBL...')
+    genbank_path: Path = Path(output) / f"{prefix}.gbff"
+    embl_path: Path = Path(output) / f"{prefix}.embl"
+    insdc.write_features(data, features, genbank_path, embl_path)
+
+    # add 3Di sequence here I think or debate how to handle this
+
+    print('\tgenome sequences...')
+    fna_path: Path = Path(output) / f"{prefix}.fna"
+    fasta.export_sequences(data['sequences'], fna_path, description=True, wrap=True)
+
+    print('\tfeature nucleotide sequences...')
+    ffn_path: Path = Path(output) / f"{prefix}.ffn"
+    fasta.write_ffn(features, ffn_path)
+
+    print('\ttranslated CDS sequences...')
+    faa_path: Path = Path(output) / f"{prefix}.faa"
+    fasta.write_faa(features, faa_path)
+
+    # maybe update this one - Oli?
+    print('\tfeature inferences...')
+    tsv_path: Path = Path(output) / f"{prefix}.inference.tsv"
+    tsv.write_feature_inferences(data['sequences'], features_by_sequence, tsv_path)
+
+
+    if(cfg.skip_cds is False):
+        hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat]
+        print('\thypothetical TSV...')
+        tsv_path: Path = Path(output) / f"{prefix}.hypotheticals.tsv"
+        tsv.write_hypotheticals(hypotheticals, tsv_path)
+
+        print('\ttranslated hypothetical CDS sequences...')
+        print('\ttranslated CDS sequences...')
+        faa_path: Path = Path(output) / f"{prefix}.hypotheticals.faa"
+        fasta.write_faa(hypotheticals, faa_path)
+
+        # calc & store runtime
+
+        # run_duration = (cfg.run_end - cfg.run_start).total_seconds()
+        # data['run'] = {
+        #     'start': cfg.run_start.strftime('%Y-%m-%d %H:%M:%S'),
+        #     'end': cfg.run_end.strftime('%Y-%m-%d %H:%M:%S'),
+        #     'duration': f'{(run_duration / 60):.2f} min'
+        # }
+
+        print('\tmachine readable JSON...')
+        json_path: Path = Path(output) / f"{prefix}.json"
+        json.write_json(data, features, json_path)
+
+
 
 
     # end baktfold

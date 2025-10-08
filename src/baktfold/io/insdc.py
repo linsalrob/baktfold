@@ -1,10 +1,9 @@
-import logging
 import re
 
 from datetime import date
 from pathlib import Path
 from typing import Sequence, Tuple
-
+from loguru import logger
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqFeature import SeqFeature, FeatureLocation, CompoundLocation, AfterPosition, BeforePosition
@@ -27,12 +26,13 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
         comment = (
             'Annotated with Bakta',
             f"Software: v{cfg.version}\n",
-            f"Database: v{cfg.db_info['major']}.{cfg.db_info['minor']}, {cfg.db_info['type']}\n",
+            f"Database: v{cfg.version}\n", # fix later
+            #f"Database: v{cfg.db_info['major']}.{cfg.db_info['minor']}, {cfg.db_info['type']}\n",
             f'DOI: {bc.BAKTA_DOI}\n',
             f'URL: {bc.BAKTA_URL}\n',
             '\n',
             '##Genome Annotation Summary:##\n',
-            f"{'Annotation Date':<30} :: {cfg.run_end.strftime('%m/%d/%Y, %H:%M:%S')}\n",
+            #f"{'Annotation Date':<30} :: {cfg.run_end.strftime('%m/%d/%Y, %H:%M:%S')}\n",
             f"{'CDSs':<30} :: {len([feat for feat in sequence_features if feat['type'] == bc.FEATURE_CDS or feat['type'] == bc.FEATURE_SORF]):5,}\n",
             f"{'tRNAs':<30} :: {len([feat for feat in sequence_features if feat['type'] == bc.FEATURE_T_RNA]):5,}\n",
             f"{'tmRNAs':<30} :: {len([feat for feat in sequence_features if feat['type'] == bc.FEATURE_TM_RNA]):5,}\n",
@@ -48,7 +48,7 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
         sequence_annotations = {
             'molecule_type': 'DNA',
             'source': data['genome'].get('taxon', ''),
-            'date': cfg.run_end.strftime('%d-%b-%Y').upper(),
+            #'date': cfg.run_end.strftime('%d-%b-%Y').upper(),
             'topology': seq['topology'],
             'data_file_division': 'HGT' if seq['type'] == bc.REPLICON_CONTIG else 'BCT',
             # 'accession': '*',  # hold back until EMBL output bug is fixed in BioPython (https://github.com/biopython/biopython/pull/3572)
@@ -289,15 +289,15 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
 
 
 def write_features(data: dict, features: Sequence[dict], genbank_output_path: Path, embl_output_path: Path):
-    log.debug('prepare: genbank=%s, embl=%s', genbank_output_path, embl_output_path)
+    logger.info('prepare: genbank=%s, embl=%s', genbank_output_path, embl_output_path)
 
     sequence_list = build_biopython_sequence_list(data, features)
     with genbank_output_path.open('wt', encoding='utf-8') as fh:
-        log.info('write GenBank: path=%s', genbank_output_path)
+        logger.info('write GenBank: path=%s', genbank_output_path)
         SeqIO.write(sequence_list, fh, format='genbank')
 
     with embl_output_path.open('wt', encoding='utf-8') as fh:
-        log.info('write EMBL: path=%s', embl_output_path)
+        logger.info('write EMBL: path=%s', embl_output_path)
         SeqIO.write(sequence_list, fh, format='embl')
 
 
@@ -349,17 +349,17 @@ def revise_product_insdc(product: str):
     old_product = product
     if(re.search(r'(uncharacteri[sz]ed)', product, flags=re.IGNORECASE)):  # replace putative synonyms)
         product = re.sub(r'(uncharacteri[sz]ed)', 'putative', product, flags=re.IGNORECASE)
-        log.info('fix product: replace putative synonyms. new=%s, old=%s', product, old_product)
+        logger.info('fix product: replace putative synonyms. new=%s, old=%s', product, old_product)
 
     old_product = product
     if(product.count('(') != product.count(')')):  # remove unbalanced parentheses
         product = product.replace('(', '').replace(')', '')  # ToDo: find and replace only legend parentheses
-        log.info('fix product: remove unbalanced parantheses. new=%s, old=%s', product, old_product)
+        logger.info('fix product: remove unbalanced parantheses. new=%s, old=%s', product, old_product)
 
     old_product = product
     if(product.count('[') != product.count(']')):  # remove unbalanced brackets
         product = product.replace('[', '').replace(']', '')  # ToDo: find and replace only legend bracket
-        log.info('fix product: remove unbalanced brackets. new=%s, old=%s', product, old_product)
+        logger.info('fix product: remove unbalanced brackets. new=%s, old=%s', product, old_product)
 
     return product
 
