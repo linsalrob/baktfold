@@ -5,6 +5,7 @@ __version__ = '0.0.1'
 import gzip
 from pathlib import Path
 
+from datetime import datetime
 import click
 from Bio import SeqIO
 from Bio.SeqFeature import FeatureLocation, SeqFeature
@@ -12,7 +13,8 @@ from loguru import logger
 
 import baktfold.bakta.constants as bc
 import baktfold.bakta.annotation as anno
-from baktfold.bakta.json_io import parse_json_input
+from baktfold.io.json_in import parse_json_input
+from baktfold.io.fasta_in import parse_protein_input
 from baktfold.databases.db import install_database, validate_db
 from baktfold.features.create_foldseek_db import generate_foldseek_db_from_aa_3di
 from baktfold.features.predict_3Di import get_T5_model
@@ -31,6 +33,7 @@ import baktfold.io.tsv as tsv
 import baktfold.io.insdc as insdc
 import baktfold.io.fasta as fasta
 import baktfold.io.json as json
+import baktfold.io.io as io
 
 log_fmt = (
     "[<green>{time:YYYY-MM-DD HH:mm:ss}</green>] <level>{level: <8}</level> | "
@@ -293,14 +296,17 @@ def run(
     # validate input
     #fasta_flag, gb_dict, method = validate_input(input, threads)
 
-    # baktfold predict
-    model_dir = database
-    model_name = "Rostlab/ProstT5_fp16"
-    checkpoint_path = Path(CNN_DIR) / "cnn_chkpnt" / "model.pt"
+
+    ###
+    # parse the json output and save hypotheticals as AA FASTA
+    ###
 
     fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
-
     data, features = parse_json_input(input, fasta_aa)
+
+    ###
+    # split features in hypotheticals and non hypotheticals
+    ###
 
     hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat]
     non_hypothetical_features = [
@@ -308,14 +314,19 @@ def run(
     if (feat['type'] != bc.FEATURE_CDS) or 
        (feat['type'] == bc.FEATURE_CDS and 'hypothetical' not in (feat.get('product') or '').lower())
 ]
-    
-    # for prostT5 code
+
+    # put the CDS AA in a simple dictionary for ProstT5 code
     cds_dict = {}
     for feat in hypotheticals:
         cds_dict[feat['locus']] = feat['aa']
 
 
     # add a function to add 3Di to cds_dict
+
+    # baktfold predict
+    model_dir = database
+    model_name = "Rostlab/ProstT5_fp16"
+    checkpoint_path = Path(CNN_DIR) / "cnn_chkpnt" / "model.pt"
 
     subcommand_predict(
         cds_dict,
@@ -336,7 +347,7 @@ def run(
 
     # baktfold compare
 
-    # predictions_dir is output as this will be where it lives
+    # predictions_dir is output as this will be where it lives for 'run'
 
     hypotheticals = subcommand_compare(
         hypotheticals,
@@ -358,23 +369,24 @@ def run(
         foldseek_gpu=foldseek_gpu,
     )
 
+    #####
     # update the hypotheticals 
+    #####
 
     for cds in hypotheticals:
         anno.combine_annotation(cds)  # add on PSTC annotations and mark hypotheticals
 
-
+    # recombine updated and existing features
     combined_features = non_hypothetical_features + hypotheticals  # recombine
     
     # Sort by ascending 'id'
     combined_features_sorted = sorted(combined_features, key=lambda x: x.get('id', ''))
 
+    # put back in dictionary
     data['features'] = combined_features_sorted
 
-    print('select features and preserve existing IDs...')
-    logger.info('start feature selection and preserving existing feature IDs')
 
-    # map features by sequence
+    # map features by sequence for io
     features_by_sequence = {seq['id']: [] for seq in data['sequences']}
 
     for feature in data['features']:
@@ -390,84 +402,237 @@ def run(
         seq_features.sort(key=lambda k: k['start'])  # sort features by start position
         features.extend(seq_features)
 
+    # overwrite feature list with sorted features
+    data['features'] = features
 
-
-    # move this to a separate submodule
- 
-
+    #####
+    # don't include this for now as no gene symbols
+    #####
 
     # logger.info('improve annotations...')
     # genes_with_improved_symbols = anno.select_gene_symbols([feature for feature in features if feature['type'] in [bc.FEATURE_CDS, bc.FEATURE_SORF]])
     # print(f'\trevised gene symbols: {len(genes_with_improved_symbols)}')
 
-    # overwrite feature list with sorted features
-    data['features'] = features
 
-    logger.info('selected features=%i', len(features))
+    ####
+    # bakta output module
+    ####
+    logger.info('writing bakta outputs')
+    io.write_bakta_outputs(data,features, features_by_sequence, output, prefix)
 
-    logger.info('\thuman readable TSV...')
-    tsv_path: Path = Path(output) / f"{prefix}.tsv"
-    tsv.write_features(data['sequences'], features_by_sequence, tsv_path)
-
-    logger.info('\tGFF3...')
-    gff3_path: Path = Path(output) / f"{prefix}.gff3"
-    gff.write_features(data, features_by_sequence, gff3_path)
-
-    logger.info('\tINSDC GenBank & EMBL...')
-    genbank_path: Path = Path(output) / f"{prefix}.gbff"
-    embl_path: Path = Path(output) / f"{prefix}.embl"
-    insdc.write_features(data, features, genbank_path, embl_path)
-
-    # add 3Di sequence here I think or debate how to handle this
-
-    print('\tgenome sequences...')
-    fna_path: Path = Path(output) / f"{prefix}.fna"
-    fasta.export_sequences(data['sequences'], fna_path, description=True, wrap=True)
-
-    print('\tfeature nucleotide sequences...')
-    ffn_path: Path = Path(output) / f"{prefix}.ffn"
-    fasta.write_ffn(features, ffn_path)
-
-    print('\ttranslated CDS sequences...')
-    faa_path: Path = Path(output) / f"{prefix}.faa"
-    fasta.write_faa(features, faa_path)
-
-    # maybe update this one - Oli?
-    print('\tfeature inferences...')
-    tsv_path: Path = Path(output) / f"{prefix}.inference.tsv"
-    tsv.write_feature_inferences(data['sequences'], features_by_sequence, tsv_path)
-
-    cfg.skip_cds = False
-    if(cfg.skip_cds is False):
-        hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat]
-        print('\thypothetical TSV...')
-        tsv_path: Path = Path(output) / f"{prefix}.hypotheticals.tsv"
-        tsv.write_hypotheticals(hypotheticals, tsv_path)
-
-        print('\ttranslated hypothetical CDS sequences...')
-        print('\ttranslated CDS sequences...')
-        faa_path: Path = Path(output) / f"{prefix}.hypotheticals.faa"
-        fasta.write_faa(hypotheticals, faa_path)
-
-        # calc & store runtime
-
-        # run_duration = (cfg.run_end - cfg.run_start).total_seconds()
-        # data['run'] = {
-        #     'start': cfg.run_start.strftime('%Y-%m-%d %H:%M:%S'),
-        #     'end': cfg.run_end.strftime('%Y-%m-%d %H:%M:%S'),
-        #     'duration': f'{(run_duration / 60):.2f} min'
-        # }
-
-        print('\tmachine readable JSON...')
-        json_path: Path = Path(output) / f"{prefix}.json"
-        json.write_json(data, features, json_path)
-
-
-
-
+   
     # end baktfold
     end_baktfold(start_time, "run")
 
+
+
+
+"""
+proteins command
+"""
+
+
+@main_cli.command()
+@click.help_option("--help", "-h")
+@click.version_option(get_version(), "--version", "-V")
+@click.pass_context
+@click.option(
+    "-i",
+    "--input",
+    help="Path to input file in amino acid FASTA format",
+    type=click.Path(),
+    required=True,
+)
+@common_options
+@predict_options
+@compare_options
+def proteins(
+    ctx,
+    input,
+    output,
+    threads,
+    prefix,
+    evalue,
+    force,
+    database,
+    batch_size,
+    sensitivity,
+    cpu,
+    omit_probs,
+    keep_tmp_files,
+    max_seqs,
+    save_per_residue_embeddings,
+    save_per_protein_embeddings,
+    ultra_sensitive,
+    mask_threshold,
+    extra_foldseek_params,
+    custom_db,
+    foldseek_gpu,
+    **kwargs,
+):
+    """baktfold proteins then comapare all in one - GPU recommended"""
+
+    # validates the directory  (need to before I start baktfold or else no log file is written)
+    instantiate_dirs(output, force)
+
+    output: Path = Path(output)
+    logdir: Path = Path(output) / "logs"
+
+    params = {
+        "--input": input,
+        "--output": output,
+        "--threads": threads,
+        "--force": force,
+        "--prefix": prefix,
+        "--evalue": evalue,
+        "--database": database,
+        "--batch_size": batch_size,
+        "--sensitivity": sensitivity,
+        "--keep_tmp_files": keep_tmp_files,
+        "--cpu": cpu,
+        "--omit_probs": omit_probs,
+        "--max_seqs": max_seqs,
+        "--save_per_residue_embeddings": save_per_residue_embeddings,
+        "--save_per_protein_embeddings": save_per_protein_embeddings,
+        "--ultra_sensitive": ultra_sensitive,
+        "--mask_threshold": mask_threshold,
+        "--extra_foldseek_params": extra_foldseek_params,
+        "--custom_db": custom_db,
+        "--foldseek_gpu": foldseek_gpu,
+    }
+
+    # initial logging etc
+    start_time = begin_baktfold(params, "proteins")
+
+    cfg.run_start = datetime.now()
+
+    # check foldseek is installed
+    check_dependencies()
+
+    # check the database is installed and return it
+    #database = validate_db(database, DB_DIR, foldseek_gpu)
+
+
+    ###
+    # parse the json output and save hypotheticals as AA FASTA
+    ###
+
+    fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
+    # puts the CDS AA in a simple dictionary for ProstT5 code
+    aas = parse_protein_input(input, fasta_aa)
+
+    # put the CDS AA in a simple dictionary for ProstT5 code
+    cds_dict = {}
+    for feat in aas:
+        cds_dict[feat['locus']] = feat['aa']
+
+    # baktfold predict
+    model_dir = database
+    model_name = "Rostlab/ProstT5_fp16"
+    checkpoint_path = Path(CNN_DIR) / "cnn_chkpnt" / "model.pt"
+
+    subcommand_predict(
+        cds_dict,
+        output,
+        prefix,
+        cpu,
+        omit_probs,
+        model_dir,
+        model_name,
+        checkpoint_path,
+        batch_size,
+        proteins_flag=False,
+        save_per_residue_embeddings=save_per_residue_embeddings,
+        save_per_protein_embeddings=save_per_protein_embeddings,
+        threads=threads,
+        mask_threshold=mask_threshold,
+    )
+
+    # baktfold compare
+
+
+    # predictions_dir is output as this will be where it lives for 'run'
+
+    aas = subcommand_compare(
+        aas, # this is dummy, no operations happen here
+        output,
+        threads,
+        evalue,
+        sensitivity,
+        database,
+        prefix,
+        predictions_dir=output,
+        structures=False,
+        structure_dir=None,
+        logdir=logdir,
+        proteins_flag=True,
+        max_seqs=max_seqs,
+        ultra_sensitive=ultra_sensitive,
+        extra_foldseek_params=extra_foldseek_params,
+        custom_db=custom_db,
+        foldseek_gpu=foldseek_gpu,
+    )
+
+    #####
+    # update the hypotheticals 
+    #####
+
+    for aa in aas:
+        anno.combine_annotation(aa)  # add on PSTC annotations and mark hypotheticals
+
+    print(aas)
+
+    ####
+    # bakta output module
+    ####
+    logger.info('writing bakta outputs')
+    #io.write_bakta_outputs(data,features, features_by_sequence, output, prefix)
+
+    cfg.run_end = datetime.now()
+    run_duration = (cfg.run_end - cfg.run_start).total_seconds()
+
+    ############################################################################
+    # Write output files
+    # - write comprehensive annotation results as JSON
+    # - write optional output files in TSV, FAA formats
+    # - remove temp directory
+    ############################################################################
+    
+    for aa in aas:  # reset mock attributes
+        aa['start'] = -1
+        aa['stop'] = -1
+
+    
+    
+    annotations_path: Path = Path(output) / f"{prefix}.tsv"
+    header_columns = ['ID', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB']
+
+    logger.info(f'Exporting annotations (TSV) to: {annotations_path}')
+    tsv.write_protein_features(aas, header_columns, annotations_path)
+
+
+    # do i combine the tophits tsvs, sort by column, add a column for db and put out as one tsv
+
+    full_annotations_path: Path = Path(output) / f"{prefix}.json"
+    logger.info(f'Full annotations (JSON): {full_annotations_path}')
+    json.write_json({'features': aas}, aas, full_annotations_path)
+
+
+    # hypotheticals_path = output_path.joinpath(f'{cfg.prefix}.hypotheticals.tsv')
+    # header_columns = ['ID', 'Length', 'Mol Weight [kDa]', 'Iso El. Point', 'Pfam hits']
+    # hypotheticals = hypotheticals = [aa for aa in aas if 'hypothetical' in aa]
+    # print(f'\tinformation on hypotheticals (TSV): {hypotheticals_path}')
+    # tsv.write_protein_features(hypotheticals, header_columns, map_hypothetical_columns, hypotheticals_path)
+
+    aa_output_path: Path = Path(output) / f"{prefix}.faa"
+    logger.info(f'Annotated sequences (Fasta): {aa_output_path}')
+    fasta.write_faa(aas, aa_output_path)
+
+    logger.info(f'If you use these results please cite Bakta: https://doi.org/{bc.BAKTA_DOI}')
+    logger.info(f'Annotation successfully finished in {int(run_duration / 60):01}:{int(run_duration % 60):02} [mm:ss].')
+   
+    # end baktfold
+    end_baktfold(start_time, "run")
 
 
 
@@ -587,138 +752,195 @@ compare command
 """
 
 
-# @main_cli.command()
-# @click.help_option("--help", "-h")
-# @click.version_option(get_version(), "--version", "-V")
-# @click.pass_context
-# @click.option(
-#     "-i",
-#     "--input",
-#     help="Path to input file in Genbank format or nucleotide FASTA format",
-#     type=click.Path(),
-#     required=True,
-# )
-# @click.option(
-#     "--predictions_dir",
-#     help="Path to output directory from baktfold predict",
-#     type=click.Path(),
-# )
-# @click.option(
-#     "--structures",
-#     is_flag=True,
-#     help="Use if you have .pdb or .cif file structures for the input proteins (e.g. with AF2/Colabfold .pdb or AF3 for .cif) in a directory that you specify with --structure_dir",
-# )
-# @click.option(
-#     "--structure_dir",
-#     help="Path to directory with .pdb or .cif file structures. The CDS IDs need to be in the name of the file",
-#     type=click.Path(),
-# )
-# @click.option(
-#     "--filter_structures",
-#     is_flag=True,
-#     help="Flag that creates a copy of the .pdb or .cif files structures with matching record IDs found in the input GenBank file. Helpful if you have a directory with lots of .pdb files and want to annotate only e.g. 1 phage.",
-# )
-# @common_options
-# @compare_options
-# def compare(
-#     ctx,
-#     input,
-#     output,
-#     threads,
-#     prefix,
-#     evalue,
-#     force,
-#     database,
-#     sensitivity,
-#     predictions_dir,
-#     structures,
-#     structure_dir,
-#     filter_structures,
-#     keep_tmp_files,
-#     card_vfdb_evalue,
-#     separate,
-#     max_seqs,
-#     ultra_sensitive,
-#     extra_foldseek_params,
-#     custom_db,
-#     foldseek_gpu,
-#     **kwargs,
-# ):
-#     """Runs Foldseek vs baktfold db"""
+@main_cli.command()
+@click.help_option("--help", "-h")
+@click.version_option(get_version(), "--version", "-V")
+@click.pass_context
+@click.option(
+    "-i",
+    "--input",
+    help="Path to input file in Genbank format or nucleotide FASTA format",
+    type=click.Path(),
+    required=True,
+)
+@click.option(
+    "--predictions_dir",
+    help="Path to output directory from baktfold predict",
+    type=click.Path(),
+    default=None,
+)
+@click.option(
+    "--structure_dir",
+    help="Path to directory with .pdb or .cif file structures. The IDs need to be in the name of the file i.e id.pdb or id.cif",
+    type=click.Path(),
+    default=None,
+)
+@common_options
+@compare_options
+def compare(
+    ctx,
+    input,
+    output,
+    threads,
+    prefix,
+    evalue,
+    force,
+    database,
+    sensitivity,
+    keep_tmp_files,
+    predictions_dir,
+    structure_dir,
+    max_seqs,
+    ultra_sensitive,
+    extra_foldseek_params,
+    custom_db,
+    foldseek_gpu,
+    **kwargs,
+):
+    """Runs Foldseek vs baktfold db"""
 
-#     # validates the directory  (need to before I start baktfold or else no log file is written)
+    # validates the directory  (need to before I start baktfold or else no log file is written)
 
-#     instantiate_dirs(output, force)
+    instantiate_dirs(output, force)
 
-#     output: Path = Path(output)
-#     logdir: Path = Path(output) / "logs"
+    output: Path = Path(output)
+    logdir: Path = Path(output) / "logs"
 
-#     params = {
-#         "--input": input,
-#         "--output": output,
-#         "--threads": threads,
-#         "--force": force,
-#         "--prefix": prefix,
-#         "--evalue": evalue,
-#         "--database": database,
-#         "--sensitivity": sensitivity,
-#         "--predictions_dir": predictions_dir,
-#         "--structures": structures,
-#         "--structure_dir": structure_dir,
-#         "--filter_structures": filter_structures,
-#         "--keep_tmp_files": keep_tmp_files,
-#         "--card_vfdb_evalue": card_vfdb_evalue,
-#         "--separate": separate,
-#         "--max_seqs": max_seqs,
-#         "--ultra_sensitive": ultra_sensitive,
-#         "--extra_foldseek_params": extra_foldseek_params,
-#         "--custom_db": custom_db,
-#         "--foldseek_gpu": foldseek_gpu,
-#     }
+    params = {
+        "--input": input,
+        "--output": output,
+        "--threads": threads,
+        "--force": force,
+        "--prefix": prefix,
+        "--evalue": evalue,
+        "--database": database,
+        "--sensitivity": sensitivity,
+        "--predictions_dir": predictions_dir,
+        "--structure_dir": structure_dir,
+        "--keep_tmp_files": keep_tmp_files,
+        "--max_seqs": max_seqs,
+        "--ultra_sensitive": ultra_sensitive,
+        "--extra_foldseek_params": extra_foldseek_params,
+        "--custom_db": custom_db,
+        "--foldseek_gpu": foldseek_gpu,
+    }
 
-#     # initial logging etc
-#     start_time = begin_baktfold(params, "compare")
+    # initial logging etc
+    start_time = begin_baktfold(params, "compare")
 
-#     # check foldseek is installed
-#     check_dependencies()
+    # check foldseek is installed
+    check_dependencies()
 
-#     # check the database is installed
-#     database = validate_db(database, DB_DIR, foldseek_gpu)
+    # check the database is installed and return it
+    #database = validate_db(database, DB_DIR, foldseek_gpu)
 
-#     # validate fasta
-#     fasta_flag, gb_dict, method = validate_input(input, threads)
+    # validate input
+    #fasta_flag, gb_dict, method = validate_input(input, threads)
 
-#     subcommand_compare(
-#         gb_dict,
-#         output,
-#         threads,
-#         evalue,
-#         card_vfdb_evalue,
-#         sensitivity,
-#         database,
-#         prefix,
-#         predictions_dir,
-#         structures,
-#         structure_dir,
-#         logdir,
-#         filter_structures,
-#         remote_flag=False,
-#         proteins_flag=False,
-#         fasta_flag=fasta_flag,
-#         separate=separate,
-#         max_seqs=max_seqs,
-#         ultra_sensitive=ultra_sensitive,
-#         extra_foldseek_params=extra_foldseek_params,
-#         custom_db=custom_db,
-#         foldseek_gpu=foldseek_gpu,
-#     )
 
-#     # cleanup the temp files
-#     if keep_tmp_files is False:
-#         clean_up_temporary_files(output)
+    ###
+    # parse the json output and save hypotheticals as AA FASTA
+    ###
 
-#     # end baktfold
-#     end_baktfold(start_time, "compare")
+    fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
+    data, features = parse_json_input(input, fasta_aa)
+
+    ###
+    # split features in hypotheticals and non hypotheticals
+    ###
+
+    hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat]
+    non_hypothetical_features = [
+    feat for feat in features
+    if (feat['type'] != bc.FEATURE_CDS) or 
+       (feat['type'] == bc.FEATURE_CDS and 'hypothetical' not in (feat.get('product') or '').lower())
+]
+    if (structure_dir):
+        structures = True
+    else:
+        structures = False
+
+    # put the CDS AA in a simple dictionary for ProstT5 code
+    cds_dict = {}
+    for feat in hypotheticals:
+        cds_dict[feat['locus']] = feat['aa']
+
+    hypotheticals = subcommand_compare(
+        hypotheticals,
+        output,
+        threads,
+        evalue,
+        sensitivity,
+        database,
+        prefix,
+        predictions_dir=predictions_dir,
+        structures=structures,
+        structure_dir=structure_dir,
+        logdir=logdir,
+        proteins_flag=False,
+        max_seqs=max_seqs,
+        ultra_sensitive=ultra_sensitive,
+        extra_foldseek_params=extra_foldseek_params,
+        custom_db=custom_db,
+        foldseek_gpu=foldseek_gpu,
+    )
+
+
+    for cds in hypotheticals:
+        anno.combine_annotation(cds)  # add on PSTC annotations and mark hypotheticals
+
+    # recombine updated and existing features
+    combined_features = non_hypothetical_features + hypotheticals  # recombine
+    
+    # Sort by ascending 'id'
+    combined_features_sorted = sorted(combined_features, key=lambda x: x.get('id', ''))
+
+    # put back in dictionary
+    data['features'] = combined_features_sorted
+
+
+    # map features by sequence for io
+    features_by_sequence = {seq['id']: [] for seq in data['sequences']}
+
+    for feature in data['features']:
+        if 'discarded' not in feature:
+            seq_features = features_by_sequence.get(feature['sequence'])
+            if seq_features is not None:
+                seq_features.append(feature)
+
+    # flatten sorted features
+    features = []
+    for seq in data['sequences']:
+        seq_features = features_by_sequence[seq['id']]
+        seq_features.sort(key=lambda k: k['start'])  # sort features by start position
+        features.extend(seq_features)
+
+    # overwrite feature list with sorted features
+    data['features'] = features
+
+    #####
+    # don't include this for now as no gene symbols
+    #####
+
+    # logger.info('improve annotations...')
+    # genes_with_improved_symbols = anno.select_gene_symbols([feature for feature in features if feature['type'] in [bc.FEATURE_CDS, bc.FEATURE_SORF]])
+    # print(f'\trevised gene symbols: {len(genes_with_improved_symbols)}')
+
+
+    ####
+    # bakta output module
+    ####
+    logger.info('writing bakta outputs')
+    io.write_bakta_outputs(data,features, features_by_sequence, output, prefix)
+
+
+
+    # cleanup the temp files
+    # if keep_tmp_files is False:
+    #     clean_up_temporary_files(output)
+
+    # end baktfold
+    end_baktfold(start_time, "compare")
 
 
 

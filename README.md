@@ -13,10 +13,37 @@ baktfold run -i tests/GCA_019351845.1_ASM1935184v1_bakta_output/GCA_019351845.1_
 
 baktfold run -i tests/ek_isolate6_bakta_output/ek_isolate6.json  -o baktfold_output_ek_isolate6 -f -t 8 -d ../baktfold_db/ 
 
+# need to pad the db first 
+foldseek makepaddedseqdb pdb pdb_gpu
+foldseek makepaddedseqdb swissprot swissprot_gpu
+foldseek makepaddedseqdb AFDBClusters AFDBClusters_gpu 
+
+    foldseek_makepaddedseqdb = ExternalTool(
+        tool="foldseek",
+        input=f"",
+        output=f"",
+        params=f"makepaddedseqdb {baktfold_db_search} {baktfold_db_search_gpu}",
+        logdir=logdir,
+    )
+
+baktfold run -i tests/ek_isolate6_bakta_output/ek_isolate6.json  -o baktfold_output_ek_isolate6 -f -t 8 -d ../baktfold_db/ --foldseek_gpu
 
 
 bakta -d ../../bakta_db/db -o ek_isolate6_bakta_output -t 4 --force ek_isolate6.fasta
 
+# proteins
+bakta_proteins -d ../../bakta_db/db -o assembly_bakta_proteins_output -t 8 --force assembly.hypotheticals.faa
+
+baktfold proteins -i tests/assembly.hypotheticals.faa  -o baktfold_proteins_output -f -t 8 -d ../baktfold_db/ 
+
+# compare
+
+# using existing ProstT5 predictions (will be fine one I add predict)
+baktfold compare -i tests/assembly_bakta_output/assembly.json --predictions_dir baktfold_output  -o baktfold_output_compare -f -t 8 -d ../baktfold_db/ 
+
+# using pdbs
+baktfold compare -i tests/assembly_bakta_output/assembly.json --structure_dir tests/pdbs  -o baktfold_output_compare -f -t 8 -d ../baktfold_db/ 
+baktfold compare -i tests/assembly_bakta_output/assembly.json --structure_dir tests/cifs  -o baktfold_output_compare -f -t 8 -d ../baktfold_db/ 
 ```
 
 * Where the `baktfold_db` for now is the Phold DB (for ProstT5) along with
@@ -90,4 +117,53 @@ cut -f1,3 AFDBClusters_uniprot_accessions_protein_names.tsv > ../baktfold_db/AFD
 ```
 
 
+# 9 October 
 
+* New v6 AFDB and Swissprot DBs available synced to Swissprot v2025_03
+* Therefore, use those headers and tags as they are updated - no need to query uniprot API
+* Only question now is using AFDB50 clusters - redo clustering as fastest 
+* with Foldseek v `8979d230fb64c7089380b652758d8705493ed4a5` on the AFDB50 minimal
+* Cluster at 90% coverage E=0.01 as per nature paper https://www.nature.com/articles/s41586-023-06510-w
+
+```bash
+./foldseek/bin/foldseek databases Alphafold/UniProt50-minimal afdb50_minimal tmp --threads 8
+
+wc -l afdb50_minimal_h # 66725340
+
+
+# foldseek cluster at the same thresholds as nature paper
+./foldseek/bin/foldseek cluster afdb50_minimal  afdb50_clusterDB tmp -c 0.9 -e 0.01
+
+# gets the tsv
+./foldseek/bin/foldseek createtsv afdb50_minimal  afdb50_minimal  $OUTDIR/clusterDB cluster.tsv
+```
+
+* Swissprot
+
+```bash
+foldseek databases Alphafold/Swiss-Prot swissprot tmp --threads 8
+awk '{match($1, /AF-([A-Z0-9]+)-F1-model_v6/, m); if (m[1] != "") print m[1] "\t" substr($0, index($0,$2))}' swissprot_h > swissprot.tsv
+
+
+```
+
+* Pdb 
+* Note only using the  reps for now as it was clustered at 100% seqid 95% coverage https://github.com/steineggerlab/foldseek/issues/258
+
+```bash
+# Clustering: Create 'targetDB_clu100' by removing redundancies from 'targetDB'
+MMSEQS_FORCE_MERGE=1 $foldseek cluster pdb_seq pdb_clu tmp -c 0.95 --min-seq-id 1.0 --cov-mode 0
+# Create sub-database 'pdb'
+$foldseek createsubdb pdb_clu pdb_seq pdb --subdb-mode 1
+```
+
+* To get the descriptions (deduplicated as well)
+
+```bash
+foldseek databases PDB pdb tmp --threads 8
+awk '{split($1, a, "-"); $1=""; print a[1] "\t" substr($0, 2)}' pdb_h > pdb.tsv
+tr -cd '\11\12\15\40-\176' < pdb.tsv > pdb_clean.tsv
+awk '!seen[$0]++' pdb_clean.tsv > pdb_unique.tsv
+mv pdb_unique.tsv pdb.tsv
+rm pdb_clean.tsv
+```

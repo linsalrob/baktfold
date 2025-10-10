@@ -33,7 +33,13 @@ def parse(features: Sequence[dict], foldseek_df: pd.DataFrame, db_name: str = 's
         target_id = row['target']
 
         # keep only the accession
-        accession = target_id.split('-')[1]
+
+        if db_name == "swissprot" or db_name == "afdb":
+            accession = target_id.split('-')[1]
+        elif db_name == "pdb":
+            accession = target_id.split('-')[0]
+        else:
+            accession = target_id
 
         if (
             query_cov >= bc.MIN_PSTC_QCOVERAGE
@@ -63,16 +69,15 @@ def parse(features: Sequence[dict], foldseek_df: pd.DataFrame, db_name: str = 's
             else:
                 cds['pstc'] = new_pstc
 
-    logger.info(f"PSTC updated in place for {sum('pstc' in cds for cds in features)} CDSs")
+    logger.info(f"PSTC for {db_name} updated in place for {sum('pstc' in cds for cds in features)} CDSs")
 
     return features
 
 
 
 def lookup(features: Sequence[dict], baktfold_db: Path):
-    """Lookup PSTC information in swissprot and afdb"""
+    """Lookup PSTC information in swissprot"""
     no_pscc_lookups = 0
-
 
     # simple dictionary of accessions and protein_name
     swissprot_dict = {}
@@ -89,6 +94,13 @@ def lookup(features: Sequence[dict], baktfold_db: Path):
             if len(row) >= 2:
                 afdb_dict[row[0]] = row[1]
 
+    pdb_dict = {}
+    with open(f"{baktfold_db}/pdb.tsv", "r") as f:
+        reader = csv.reader(f, delimiter="\t")
+        for row in reader:
+            if len(row) >= 2:
+                pdb_dict[row[0]] = row[1]
+
     for feat in features:
         pstc = feat.get('pstc')
         if not pstc:
@@ -100,14 +112,15 @@ def lookup(features: Sequence[dict], baktfold_db: Path):
         for entry in pstc_entries:
             accession = entry.get('id')
             source = entry.get('source')
-
             if source == 'swissprot' and accession in swissprot_dict:
                 entry['description'] = swissprot_dict[accession]
             elif source == 'afdb' and accession in afdb_dict:
                 entry['description'] = afdb_dict[accession]
+            elif source == 'pdb' and accession in pdb_dict:
+                entry['description'] = pdb_dict[accession]
             else:
-                # Keep None for missing or non-swissprot entries
-                entry['description'] = None
+                # Keep "hypothetical protein" for missing
+                entry['description'] = "hypothetical protein"
 
         # Write back normalized list or single entry
         feat['pstc'] = pstc_entries if isinstance(pstc, list) else pstc_entries[0]

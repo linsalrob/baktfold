@@ -14,6 +14,7 @@ from baktfold.features.create_foldseek_db import (
     generate_foldseek_db_from_aa_3di, generate_foldseek_db_from_structures)
 from baktfold.features.run_foldseek import create_result_tsv, run_foldseek_search
 from baktfold.io.handle_genbank import write_genbank
+import baktfold.io.io as io
 from baktfold.results.tophit import get_tophit
 import baktfold.bakta.pstc as pstc
 
@@ -116,16 +117,13 @@ def subcommand_compare(
 
     if structures is True:
         logger.info("Creating a foldseek query database from structures.")
-        logger.info("deal with this later also")
 
         generate_foldseek_db_from_structures(
             fasta_aa,
             foldseek_query_db_path,
             structure_dir,
-            filtered_structures_path,
             logdir,
             prefix,
-            filter_structures,
             proteins_flag,
         )
     else:
@@ -244,16 +242,90 @@ def subcommand_compare(
 
     afdbclusters_df = get_tophit(result_tsv,structures)
 
+    #####
+    # foldseek search pdb
+    #####
+
+
+    database_name = "pdb"
+
+    if short_db_name == database_name:
+        logger.error(
+            f"Please choose a different -p {prefix} as this conflicts with the {database_name}"
+        )
+
+    query_db: Path = Path(foldseek_query_db_path) / short_db_name
+    target_db: Path = Path(database) / database_name
+
+    # make result and temp dirs
+    result_db_base: Path = Path(output) / "result_db"
+    result_db_base.mkdir(parents=True, exist_ok=True)
+    result_db: Path = Path(result_db_base) / "result_pdb_db"
+
+    temp_db: Path = Path(output) / "temp_db"
+    temp_db.mkdir(parents=True, exist_ok=True)
+
+    # make result tsv
+    result_tsv: Path = Path(output) / "foldseek_results_pdb.tsv"
+
+    # run foldseek search
+    run_foldseek_search(
+        query_db,
+        target_db,
+        result_db,
+        temp_db,
+        threads,
+        logdir,
+        evalue,
+        sensitivity,
+        max_seqs,
+        ultra_sensitive,
+        extra_foldseek_params,
+        foldseek_gpu,
+        structures
+    )
+
+       
+    create_result_tsv(query_db, target_db, result_db, result_tsv, logdir, foldseek_gpu, structures, threads)
+
+    pdb_df = get_tophit(result_tsv,structures)
+
+    # write tophits
+    swissprot_tophit_path: Path = Path(output) / "baktfold_swissprot_tophit.tsv"
+    io.write_foldseek_tophit(swissprot_df, swissprot_tophit_path)
+
+    afdb_tophit_path: Path = Path(output) / "baktfold_afdbclusters_tophit.tsv"
+    io.write_foldseek_tophit(afdbclusters_df, afdb_tophit_path)
+
+    pdb_tophit_path: Path = Path(output) / "baktfold_pdb_tophit.tsv"
+    io.write_foldseek_tophit(pdb_df, pdb_tophit_path)
 
     ####
-    # looup
+    # lookup
     ####
-    # add the Swissprot and AFDB tophits to the json
-    hypotheticals = pstc.parse(hypotheticals, swissprot_df, 'swissprot')
-    hypotheticals = pstc.parse(hypotheticals, afdbclusters_df, 'afdb')
 
-    # get the lookup descriptions for each of them
-    hypotheticals = pstc.lookup(hypotheticals, Path(database))
+    if proteins_flag: # baktfold proteins
+
+        # note aas passed as hypotheticals to the overall function - so in and out as aas
+
+        aas = pstc.parse(hypotheticals, swissprot_df, 'swissprot')
+        aas = pstc.parse(aas, afdbclusters_df, 'afdb')
+        aas = pstc.parse(aas, pdb_df, 'pdb')
+
+        # get the lookup descriptions for each of them
+        # for the return rename hypotheticals
+        hypotheticals = pstc.lookup(aas, Path(database))
+
+
+    else: # baktfold run
+
+        # add the Swissprot and AFDB and PDB tophits to the json
+        hypotheticals = pstc.parse(hypotheticals, swissprot_df, 'swissprot')
+        hypotheticals = pstc.parse(hypotheticals, afdbclusters_df, 'afdb')
+        hypotheticals = pstc.parse(hypotheticals, pdb_df, 'pdb')
+
+        # get the lookup descriptions for each of them
+        hypotheticals = pstc.lookup(hypotheticals, Path(database))
 
 
     return hypotheticals

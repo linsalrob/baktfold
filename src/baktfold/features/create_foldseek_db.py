@@ -138,10 +138,8 @@ def generate_foldseek_db_from_structures(
     fasta_aa: Path,
     foldseek_db_path: Path,
     structure_dir: Path,
-    filtered_structures_path: Path,
     logdir: Path,
     prefix: str,
-    filter_structures: bool,
     proteins_flag: bool,
 ) -> None:
     """
@@ -151,10 +149,8 @@ def generate_foldseek_db_from_structures(
         fasta_aa (Path): Path to the amino-acid FASTA file.
         foldseek_db_path (Path): Path to the directory where Foldseek database will be stored.
         structure_dir (Path): Path to the directory containing .pdb or .cif structure files.
-        filtered_structures_path (Path): Path to the directory where filtered .pdb or .cif structure files will be stored.
         logdir (Path): Path to the directory where logs will be stored.
         prefix (str): Prefix for the Foldseek database.
-        filter_structures (bool): Flag indicating whether to filter structure files or not.
         proteins_flag (bool): Flag - True if proteins-compare is run
 
     Returns:
@@ -181,14 +177,7 @@ def generate_foldseek_db_from_structures(
 
     no_structure_cds_ids = []
 
-    for id in sequences_aa.keys():
-        if proteins_flag:
-            # will just be the CDS id if it is proteins-compare
-            cds_id = id
-        else:
-            # in case the header has a colon in it - this will cause a bug if so
-            cds_id = id.split(":")[1:]
-            cds_id = ":".join(cds_id).strip()
+    for cds_id in sequences_aa.keys():
 
         # record_id = id.split(":")[0]
         # this is potentially an issue if a contig has > 9999 AAs
@@ -201,23 +190,13 @@ def generate_foldseek_db_from_structures(
             if f"{cds_id}.pdb" == file or f"{cds_id}.cif" == file
         ]
 
-        # delete the copying upon release, but for now do the copying to easy get the > Oct 2021 PDBs
-        # with filter_structures
         if len(matching_files) == 1:
-            if filter_structures is True:
-                source_path = Path(structure_dir) / matching_files[0]
-                destination_path = Path(filtered_structures_path) / matching_files[0]
-                shutil.copyfile(source_path, destination_path)
             num_structures += 1
 
         # should neve happen but in case
         if len(matching_files) > 1:
             logger.warning(f"More than 1 structures found for {cds_id}")
             logger.warning("Taking the first one")
-            if filter_structures is True:
-                source_path = Path(structure_dir) / matching_files[0]
-                destination_path = Path(filtered_structures_path) / matching_files[0]
-                shutil.copyfile(source_path, destination_path)
             num_structures += 1
         elif len(matching_files) == 0:
             logger.warning(f"No structure found for {cds_id}")
@@ -234,10 +213,6 @@ def generate_foldseek_db_from_structures(
     structure_db_name: Path = Path(foldseek_db_path) / short_db_name
     query_structure_dir = structure_dir
 
-    # choose the filtered directory if true
-    # otherwise all pdbs in the structure_dir will be made into the foldseek DB
-    if filter_structures is True:
-        query_structure_dir = filtered_structures_path
 
     foldseek_createdb_from_structures = ExternalTool(
         tool="foldseek",

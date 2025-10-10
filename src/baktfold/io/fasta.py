@@ -52,8 +52,7 @@ def import_sequences(sequences_path: Path, is_genomic: bool=True, is_dna: bool=T
                 sequence['type'] = bc.REPLICON_CONTIG
                 sequence['topology'] = bc.TOPOLOGY_LINEAR
             logger.info(
-                'imported: id=%s, length=%i, description=%s, genomic=%s, dna=%s',
-                sequence['id'], sequence['length'], sequence['description'], is_genomic, is_dna
+                f'imported: id={sequence['id']}, length={sequence['length']}, description={sequence['description']}, genomic={is_genomic}, dna={is_dna}'
             )
             sequences.append(sequence)
     return sequences
@@ -61,7 +60,7 @@ def import_sequences(sequences_path: Path, is_genomic: bool=True, is_dna: bool=T
 
 def export_sequences(sequences: Sequence[dict], fasta_path: Path, description: bool=False, wrap: bool=False):
     """Write sequences to Fasta file."""
-    logger.info('write genome sequences: path=%s, description=%s, wrap=%s', fasta_path, description, wrap)
+    logger.info(f'write genome sequences: path={fasta_path}, description={description}, wrap={wrap}')
 
     with fasta_path.open('wt') as fh:
         for seq in sequences:
@@ -85,7 +84,7 @@ def wrap_sequence(sequence: str):
 
 def write_faa(features: Sequence[dict], faa_path: Path):
     """Write translated CDS sequences to Fasta file."""
-    logger.info('write translated CDS/sORF: path=%s', faa_path)
+    logger.info(f'write translated CDS/sORF: path={faa_path}')
     with faa_path.open('wt') as fh:
         for feat in features:
             if(feat['type'] == bc.FEATURE_CDS or feat['type'] == bc.FEATURE_SORF):
@@ -94,7 +93,7 @@ def write_faa(features: Sequence[dict], faa_path: Path):
 
 def write_ffn(features: Sequence[dict], ffn_path: Path):
     """Write annotated nucleotide sequences to Fasta file."""
-    logger.info('write feature nucleotide sequences: path=%s', ffn_path)
+    logger.info(f'write feature nucleotide sequences: path={ffn_path}')
     with ffn_path.open('wt') as fh:
         for feat in features:
             if(feat['type'] in [bc.FEATURE_T_RNA, bc.FEATURE_TM_RNA, bc.FEATURE_R_RNA, bc.FEATURE_NC_RNA, bc.FEATURE_NC_RNA_REGION, bc.FEATURE_CRISPR, bc.FEATURE_CDS, bc.FEATURE_SORF, bc.FEATURE_ORIC, bc.FEATURE_ORIV, bc.FEATURE_ORIT]):

@@ -3,7 +3,7 @@ from loguru import logger
 from pathlib import Path
 from types import LambdaType
 from typing import Dict, Sequence
-
+from datetime import datetime
 import baktfold.bakta
 import baktfold.bakta.config as cfg
 import baktfold.bakta.constants as bc
@@ -20,7 +20,7 @@ import baktfold.bakta.constants as bc
 
 def write_features(sequences: Sequence[dict], features_by_sequence: Dict[str, dict], tsv_path: Path):
     """Export features in TSV format."""
-    logger.info('write feature tsv: path=%s', tsv_path)
+    logger.info(f'write feature tsv: path={tsv_path}')
 
     with tsv_path.open('wt') as fh:
         fh.write('# Annotated with Bakta\n')
@@ -152,18 +152,36 @@ def write_feature_inferences(sequences: Sequence[dict], features_by_sequence: Di
                     fh.write('\n')
     return
 
+def map_aa_columns(feat: dict) -> Sequence[str]:
+    # no gene here for now
+    # gene = feat.get('gene', None)
+    # if(gene is None):
+    #     gene = ''
 
-def write_protein_features(features: Sequence[dict], header_columns: Sequence[str], mapping: LambdaType, tsv_path: Path):
+    # header_columns = ['ID', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB']
+    print(feat)
+    return [
+        feat['id'],
+        str(feat['length']),
+        #gene,
+        feat['product'],
+        ','.join([dbxref.replace('afdb_v6:', '') for dbxref in feat['db_xrefs'] if 'swissprot' in dbxref]),
+        ','.join([dbxref.replace('afdb_v6:', '') for dbxref in feat['db_xrefs'] if 'afdbclusters_' in dbxref]),
+        ','.join([dbxref.replace('pdb:', '') for dbxref in feat['db_xrefs'] if 'pdb:' in dbxref]),
+    ]
+
+def write_protein_features(features: Sequence[dict], header_columns: Sequence[str], tsv_path: Path):
     """Export protein features in TSV format."""
     logger.info('write protein feature tsv: path=%s', tsv_path)
 
     with tsv_path.open('wt') as fh:
-        fh.write(f'#Annotated with Bakta (v{cfg.version}): https://github.com/oschwengers/bakta\n')
+        fh.write(f'#Annotated with Baktfold (v{cfg.version}): https://github.com/gbouras13/baktfold\n')
         #fh.write(f"#Database (v{cfg.db_info['major']}.{cfg.db_info['minor']}): https://doi.org/10.5281/zenodo.4247252\n")
         fh.write('\t'.join(header_columns))
         fh.write('\n')
         for feat in features:
-            columns = mapping(feat)
+            columns = map_aa_columns(feat)
+            print(columns)
             fh.write('\t'.join(columns))
             fh.write('\n')
     return

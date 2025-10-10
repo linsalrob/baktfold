@@ -11,8 +11,7 @@ from pathlib import Path
 from xopen import xopen
 
 import baktfold.bakta.constants as bc
-# import baktfold.bakta.config as cfg
-
+import baktfold.bakta.config as cfg
 
 # import baktfold.utils as bu
 # import baktfold.io.fasta as fasta
@@ -29,22 +28,19 @@ def parse_json_input(input_path, faa_path):
     # - test database
     # - test binary dependencies
     ############################################################################
+
     try:
         if input_path == '':
             raise ValueError('File path argument must be non-empty')
         annotation_path = Path(input_path).resolve()
-        #cfg.check_readability('annotation', annotation_path)
-        #cfg.check_content_size('annotation', annotation_path)
+        cfg.check_readability('annotation', annotation_path)
+        cfg.check_content_size('annotation', annotation_path)
     except:
         logger.error(f'ERROR: annotation file {annotation_path} not valid!')
-    logger.info('input-path=%s', annotation_path)
     
     #print(f'baktfold v{cfg.version}')
-    print('Options and arguments:')
-    print(f'\tinput: {annotation_path}')
-    
 
-    print('Parse genome annotations...')
+    logger.info(f'Parsing genome annotations from input: {annotation_path}')
     with xopen(str(annotation_path), threads=0) as fh:
         data = json.load(fh)
     features = data['features']
@@ -61,6 +57,7 @@ def parse_json_input(input_path, faa_path):
         for feat in hypotheticals:
             fh.write(f">{feat['locus']}\n{feat['aa']}\n")
 
+    logger.info('Parsing complete')
 
     return data, features
 

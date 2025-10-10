@@ -58,6 +58,8 @@ def subcommand_predict(
         bool: True if prediction succeeds, False otherwise.
     """
 
+    logger.info('Predicting 3Di sequences using ProstT5')
+
     fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
 
     ############
@@ -79,7 +81,7 @@ def subcommand_predict(
     else:
         output_probs = True
 
-    predictions = get_embeddings(
+    prediction_dict = get_embeddings(
         cds_dict,
         output,
         prefix,
@@ -109,29 +111,32 @@ def subcommand_predict(
     ## write the AA CDS to file
     ######
 
-    # with open(fasta_aa, "w+") as out_f:
-    #     for contig_id, rest in cds_dict.items():
-    #         aa_contig_dict = cds_dict[contig_id]
-    #         prediction_contig_dict = predictions[contig_id]
-    #         prediction_contig_dict = {
-    #             k: v for k, v in prediction_contig_dict.items() if len(v[0]) > 0
-    #         }
-    #         for seq_id, cds_feature in aa_contig_dict.items():
-    #             if proteins_flag is True:
-    #                 out_f.write(f">{seq_id}\n")
-    #             else:
-    #                 out_f.write(f">{contig_id}:{seq_id}\n")
+    print(cds_dict)
 
-    #             prot_seq = cds_feature.qualifiers['translation']
-    #             # prediction_contig_dict[seq_id][2] these are teh ProstT5 confidence scores from 0-1 - need to convert to list
 
-    #             try:
-    #                 # this will fail if ProstT5 OOM fails (or fails for some other reason)
-    #                 prot_seq = mask_low_confidence_aa(prot_seq, prediction_contig_dict[seq_id][2].tolist(), threshold=mask_prop_threshold)
-    #             except (KeyError, IndexError):
-    #                 # in that case, just return 'X' aka masked proteins
-    #                 prot_seq = "X" * len(prot_seq)
+    # check all the lengths of the predictions are >0 in case of OOMs and filter out those that arent
+    prediction_dict = {
+                k: v for k, v in prediction_dict.items() if len(v[0]) > 0
+            }
 
-    #             out_f.write(f"{prot_seq}\n")
+
+
+
+    with open(fasta_aa, "w+") as out_f:
+        for cds_id, prot_seq in cds_dict.items():
+
+            out_f.write(f">{cds_id}\n")
+
+                # prediction_contig_dict[seq_id][2] these are teh ProstT5 confidence scores from 0-1 - need to convert to list
+
+            try:
+                # this will fail if ProstT5 OOM fails (or fails for some other reason)
+                prot_seq = mask_low_confidence_aa(prot_seq, prediction_dict[cds_id][2].tolist(), threshold=mask_prop_threshold)
+            except (KeyError, IndexError):
+                # in that case, just return 'X' aka masked proteins
+                prot_seq = "X" * len(prot_seq)
+
+            out_f.write(f"{prot_seq}\n")
+   
 
     return True

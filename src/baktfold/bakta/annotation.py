@@ -48,27 +48,39 @@ def combine_annotation(feature: dict):
     # gene = None
     # genes = set()
     # product = None
-    # db_xrefs = set()
+
     product = feature.get('product', None)
-    db_xrefs = feature.get('db_xrefs', set())
+    db_xrefs = feature.get('db_xrefs', [])
 
 
     if(pstc):
+
         # Always normalize pstc to a list
         if isinstance(pstc, dict):
             pstc = [pstc]
         elif isinstance(pstc, str):
             pstc = [pstc]
         
-        # Try to get product from AFDB first (only look at dicts)
+        # afdb
         afdb_entry = next((p for p in pstc if isinstance(p, dict) and p.get('source') == 'afdb'), None)
-        # Fallback: get product from any other source (e.g., swissprot)
+        # swissprot
         swissprot_entry = next((p for p in pstc if isinstance(p, dict) and p.get('source') == 'swissprot'), None)
+        # pdb
+        pdb_entry = next((p for p in pstc if isinstance(p, dict) and p.get('source') == 'pdb'), None)
+
+        ####
+        # hierarchy
+        # 1. SwissProt
+        # 2. AFDB
+        # 3. PDB
+        ####
 
         if swissprot_entry:
             pstc_product = swissprot_entry['description']
         elif afdb_entry:
             pstc_product = afdb_entry['description'] 
+        elif pdb_entry:
+            pstc_product = pdb_entry['description'] 
         else:
             pstc_product = None
 
@@ -82,14 +94,21 @@ def combine_annotation(feature: dict):
                 eid = entry.get('id')
                 if eid:
                     if src == 'afdb':
-                        db_xrefs.append(f"afdb:afdb_{eid}")
+                        db_xrefs.append(f"afdb_v6:afdbclusters_{eid}")
                     elif src == 'swissprot':
-                        db_xrefs.append(f"swissprot:swissprot_{eid}")
+                        db_xrefs.append(f"afdb_v6:swissprot_{eid}")
+                    elif src == 'pdb':
+                        db_xrefs.append(f"pdb:pdb_{eid}")
                     else:
                         db_xrefs.append(eid)
             elif isinstance(entry, str):
                 # Preserve any existing string cross-references
                 db_xrefs.append(entry)
+
+        # mark as baktfold
+        mark_as_baktfold(feature)
+
+
 
 
     # if(len(expert_hits) > 0):
@@ -109,8 +128,6 @@ def combine_annotation(feature: dict):
             if(cfg.compliant):
                 product = insdc.revise_product_insdc(product)
             feature['product'] = product
-
-            print(feature)
 
             unmark_as_hypothetical(feature)
         
@@ -312,10 +329,10 @@ def revise_cds_product(product: str):
 
 
 def mark_as_hypothetical(feature: dict):
-    logger.info(
-        'marked as hypothetical: seq=%s, start=%i, stop=%i, strand=%s',
-        feature['sequence'], feature['start'], feature['stop'], feature['strand']
-    )
+    # no need to actually print this I think
+    # logger.info(
+    #     f'marked as hypothetical: seq={feature['sequence']}, start={feature['start']}, stop={feature['stop']}, strand={feature['strand']}'
+    # )
     feature['hypothetical'] = True
     feature['gene'] = None
     feature['genes'] = []
@@ -323,11 +340,15 @@ def mark_as_hypothetical(feature: dict):
 
 def unmark_as_hypothetical(feature: dict):
     logger.info(
-        'unmarked as hypothetical: seq=%s, start=%i, stop=%i, strand=%s',
-        feature['sequence'], feature['start'], feature['stop'], feature['strand']
+        f'unmarked as hypothetical: seq={feature['sequence']}, start={feature['start']}, stop={feature['stop']}, strand={feature['strand']}'
     )
     feature.pop('hypothetical', None)  # remove completely
 
+def mark_as_baktfold(feature: dict):
+    logger.info(
+        f'baktfold found hit(s) for: seq={feature['sequence']}, start={feature['start']}, stop={feature['stop']}, strand={feature['strand']}'
+    )
+    feature['baktfold'] = True
 
 
 # def get_adjacent_genes(feature: dict, features: Sequence[dict], neighbors=3):
@@ -404,3 +425,21 @@ def unmark_as_hypothetical(feature: dict):
 #                 )
 #                 improved_genes.append(feat)
 #     return improved_genes
+
+###
+# proteins
+###
+
+
+def annotate_aa(aas: Sequence[dict]):
+
+    print('\tcombine annotations and mark hypotheticals...')
+
+    for aa in aas:
+        print(aa)
+        combine_annotation(aa)  # combine IPS & PSC annotations and mark hypothetical
+    log.debug('analyze hypotheticals')
+    hypotheticals = [aa for aa in aas if 'hypothetical' in aa]
+    if(len(hypotheticals) > 0):
+        print(f'\tanalyze hypothetical proteins: {len(hypotheticals)}')
+        print('\tcalculated proteins statistics')
