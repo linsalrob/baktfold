@@ -52,7 +52,6 @@ def combine_annotation(feature: dict):
     product = feature.get('product', None)
     db_xrefs = feature.get('db_xrefs', [])
 
-
     if(pstc):
 
         # Always normalize pstc to a list
@@ -67,6 +66,8 @@ def combine_annotation(feature: dict):
         swissprot_entry = next((p for p in pstc if isinstance(p, dict) and p.get('source') == 'swissprot'), None)
         # pdb
         pdb_entry = next((p for p in pstc if isinstance(p, dict) and p.get('source') == 'pdb'), None)
+        # pdb
+        custom_entry = next((p for p in pstc if isinstance(p, dict) and p.get('source') == 'custom'), None)
 
         ####
         # hierarchy
@@ -81,6 +82,8 @@ def combine_annotation(feature: dict):
             pstc_product = afdb_entry['description'] 
         elif pdb_entry:
             pstc_product = pdb_entry['description'] 
+        elif custom_entry:
+            pstc_product = custom_entry['description'] 
         else:
             pstc_product = None
 
@@ -99,6 +102,8 @@ def combine_annotation(feature: dict):
                         db_xrefs.append(f"afdb_v6:swissprot_{eid}")
                     elif src == 'pdb':
                         db_xrefs.append(f"pdb:pdb_{eid}")
+                    elif src == 'custom':
+                        db_xrefs.append(f"custom:custom_{eid}")
                     else:
                         db_xrefs.append(eid)
             elif isinstance(entry, str):

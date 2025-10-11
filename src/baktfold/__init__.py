@@ -195,6 +195,11 @@ def compare_options(func):
             "--foldseek_gpu",
             is_flag=True,
             help="Use this to enable compatibility with Foldseek-GPU search acceleration",
+        ),
+        click.option(
+            "--custom_annotations",
+            type=click.Path(),
+            help="Custom Foldseek DB annotations, 2 column tsv. Column 1 matches the Foldseek headers, column 2 is the description.",
         )
     ]
     for option in reversed(options):
@@ -250,6 +255,7 @@ def run(
     mask_threshold,
     extra_foldseek_params,
     custom_db,
+    custom_annotations,
     foldseek_gpu,
     **kwargs,
 ):
@@ -281,6 +287,7 @@ def run(
         "--mask_threshold": mask_threshold,
         "--extra_foldseek_params": extra_foldseek_params,
         "--custom_db": custom_db,
+        "--custom_annotations": custom_annotations,
         "--foldseek_gpu": foldseek_gpu,
     }
 
@@ -367,6 +374,7 @@ def run(
         extra_foldseek_params=extra_foldseek_params,
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
+        custom_annotations=custom_annotations
     )
 
     #####
@@ -468,6 +476,7 @@ def proteins(
     extra_foldseek_params,
     custom_db,
     foldseek_gpu,
+    custom_annotations,
     **kwargs,
 ):
     """baktfold proteins then comapare all in one - GPU recommended"""
@@ -499,6 +508,7 @@ def proteins(
         "--extra_foldseek_params": extra_foldseek_params,
         "--custom_db": custom_db,
         "--foldseek_gpu": foldseek_gpu,
+        "--custom_annotations": custom_annotations
     }
 
     # initial logging etc
@@ -571,6 +581,7 @@ def proteins(
         extra_foldseek_params=extra_foldseek_params,
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
+        custom_annotations=custom_annotations
     )
 
     #####
@@ -809,6 +820,7 @@ def compare(
     ultra_sensitive,
     extra_foldseek_params,
     custom_db,
+    custom_annotations,
     foldseek_gpu,
     **kwargs,
 ):
@@ -837,6 +849,7 @@ def compare(
         "--ultra_sensitive": ultra_sensitive,
         "--extra_foldseek_params": extra_foldseek_params,
         "--custom_db": custom_db,
+        "--custom_annotations": custom_annotations,
         "--foldseek_gpu": foldseek_gpu,
     }
 
@@ -898,6 +911,7 @@ def compare(
         extra_foldseek_params=extra_foldseek_params,
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
+        custom_annotations=custom_annotations
     )
 
 

@@ -75,7 +75,7 @@ def parse(features: Sequence[dict], foldseek_df: pd.DataFrame, db_name: str = 's
 
 
 
-def lookup(features: Sequence[dict], baktfold_db: Path):
+def lookup(features: Sequence[dict], baktfold_db: Path, custom_annotations: Path):
     """Lookup PSTC information in swissprot"""
     no_pscc_lookups = 0
 
@@ -101,6 +101,15 @@ def lookup(features: Sequence[dict], baktfold_db: Path):
             if len(row) >= 2:
                 pdb_dict[row[0]] = row[1]
 
+    # custom
+    if custom_annotations:
+        custom_dict = {}
+        with open(f"{custom_annotations}", "r") as f:
+            reader = csv.reader(f, delimiter="\t")
+            for row in reader:
+                if len(row) >= 2:
+                    custom_dict[row[0]] = row[1]
+
     for feat in features:
         pstc = feat.get('pstc')
         if not pstc:
@@ -118,6 +127,11 @@ def lookup(features: Sequence[dict], baktfold_db: Path):
                 entry['description'] = afdb_dict[accession]
             elif source == 'pdb' and accession in pdb_dict:
                 entry['description'] = pdb_dict[accession]
+            elif source == 'custom_db':
+                if accession in custom_dict:
+                    entry['description'] = custom_dict[accession]
+                else:
+                    entry['description'] = accession # mark as accession if no annotation given for custom for now
             else:
                 # Keep "hypothetical protein" for missing
                 entry['description'] = "hypothetical protein"

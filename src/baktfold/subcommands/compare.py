@@ -35,7 +35,8 @@ def subcommand_compare(
     ultra_sensitive: bool,
     extra_foldseek_params: str,
     custom_db: str,
-    foldseek_gpu: bool
+    foldseek_gpu: bool,
+    custom_annotations: Optional[Path]
 ) -> bool:
     """
     Compare 3Di or PDB structures to the baktfold DB
@@ -59,6 +60,7 @@ def subcommand_compare(
         extra_foldseek_params (str): Extra foldseek search parameters
         custom_db (str): Custom foldseek database
         foldseek_gpu (bool): Use Foldseek-GPU acceleration and ungappedprefilter
+        custom_annotations (Optional[Path]): Path to the tsv containing the custom_db annotations, 2 columns 
 
     Returns:
         bool: True if sub-databases are created successfully, False otherwise.
@@ -300,6 +302,56 @@ def subcommand_compare(
     pdb_tophit_path: Path = Path(output) / "baktfold_pdb_tophit.tsv"
     io.write_foldseek_tophit(pdb_df, pdb_tophit_path)
 
+
+    # custom db output 
+
+    #####
+    # custom db
+    #####
+
+
+    if custom_db:
+
+        try:
+
+            logger.info(f"Foldseek will also be run against your custom database {custom_db}")
+            # make result and temp dirs
+            result_db_custom: Path = Path(result_db_base) / "result_db_custom"
+            result_tsv_custom: Path = Path(output) / "foldseek_results_custom.tsv"
+
+            run_foldseek_search(
+            query_db,
+            Path(custom_db),
+            result_db_custom,
+            temp_db,
+            threads,
+            logdir,
+            evalue,
+            sensitivity,
+            max_seqs,
+            ultra_sensitive,
+            extra_foldseek_params,
+            foldseek_gpu,
+            structures
+        )
+
+            create_result_tsv(query_db, Path(custom_db),
+                result_db_custom,
+                result_tsv_custom, logdir, foldseek_gpu, structures, threads)
+
+            custom_df = get_tophit(result_tsv_custom,structures)
+
+            custom_db_tophit_path: Path = Path(output) / "baktfold_custom_db_tophit.tsv"
+            io.write_foldseek_tophit(custom_df, custom_db_tophit_path)
+
+            print(custom_df)
+
+      
+    
+        except:
+            logger.error(f"Foldseek failed to run against your custom database {custom_db}. Please check that it is formatted correctly as a Foldseek database")
+
+
     ####
     # lookup
     ####
@@ -311,10 +363,12 @@ def subcommand_compare(
         aas = pstc.parse(hypotheticals, swissprot_df, 'swissprot')
         aas = pstc.parse(aas, afdbclusters_df, 'afdb')
         aas = pstc.parse(aas, pdb_df, 'pdb')
+        if custom_db:
+            aas = pstc.parse(aas, custom_df, 'custom_db')
 
         # get the lookup descriptions for each of them
         # for the return rename hypotheticals
-        hypotheticals = pstc.lookup(aas, Path(database))
+        hypotheticals = pstc.lookup(aas, Path(database), custom_annotations)
 
 
     else: # baktfold run
@@ -323,9 +377,11 @@ def subcommand_compare(
         hypotheticals = pstc.parse(hypotheticals, swissprot_df, 'swissprot')
         hypotheticals = pstc.parse(hypotheticals, afdbclusters_df, 'afdb')
         hypotheticals = pstc.parse(hypotheticals, pdb_df, 'pdb')
+        if custom_db:
+            hypotheticals = pstc.parse(hypotheticals, custom_df, 'custom_db')
 
         # get the lookup descriptions for each of them
-        hypotheticals = pstc.lookup(hypotheticals, Path(database))
+        hypotheticals = pstc.lookup(hypotheticals, Path(database), custom_annotations)
 
 
     return hypotheticals
@@ -333,71 +389,7 @@ def subcommand_compare(
 
     
 
-    # custom db output 
-
-    #####
-    # custom db
-    #####
-
-    # if custom_db:
-
-    #     logger.info(f"Foldseek will also be run against your custom database {custom_db}")
-    #     # make result and temp dirs
-    #     result_db_custom: Path = Path(result_db_base) / "result_db_custom"
-    #     result_tsv_custom: Path = Path(output) / "foldseek_results_custom.tsv"
-
-    #     #try:
-    #     run_foldseek_search(
-    #     query_db,
-    #     Path(custom_db),
-    #     result_db_custom,
-    #     temp_db,
-    #     threads,
-    #     logdir,
-    #     evalue,
-    #     sensitivity,
-    #     max_seqs,
-    #     ultra_sensitive,
-    #     extra_foldseek_params,
-    #     foldseek_gpu,
-    #     structures,
-    #     clustered_db=False # no custom db cluster searching
-    # )
-
-      
-    
-    #     # make result tsv
-    #     create_result_tsv(query_db, Path(custom_db), result_db_custom,  result_tsv_custom, logdir, foldseek_gpu, structures, threads)
-
-    #     tophit_custom_df = get_topcustom_hits(
-    #     result_tsv_custom, structures, proteins_flag)
 
 
 
-    #     #### merge 
-    #     # left merge on the cds_id to get every cds/contig id (make it easier for downstream processing)
 
-    #     if not proteins_flag: # if not proteins, need the contig_id
-    #         all_cds_df = merged_df[['contig_id','cds_id']]
-    #     else:
-    #         all_cds_df = merged_df[['cds_id']]
-    #     tophit_custom_df = all_cds_df.merge(tophit_custom_df, how="left", on='cds_id') # cds_id will always be unique
-
-    #     # get the final column order required
-    #     if proteins_flag: # no contig_id
-    #         columns_order = ['cds_id'] + [col for col in tophit_custom_df.columns if col not in ['contig_id', 'cds_id']]
-    #     else: # including structures, will have contig_id too in the merged_df
-    #         columns_order = ['contig_id', 'cds_id'] + [col for col in tophit_custom_df.columns if col not in ['contig_id', 'cds_id']]
-    #     tophit_custom_df = tophit_custom_df[columns_order]
-
-    #     # get coverages
-    #     tophit_custom_df = calculate_qcov_tcov(tophit_custom_df)
-    #     custom_hits_path: Path = Path(output) / f"{prefix}_custom_database_hits.tsv"
-    #     tophit_custom_df.to_csv(custom_hits_path, index=False, sep="\t")
-        
-    #     # except:
-    #     #     logger.error(f"Foldseek failed to run against your custom database {custom_db}. Please check that it is formatted correctly as a Foldseek database")
-
-
-
-    return True

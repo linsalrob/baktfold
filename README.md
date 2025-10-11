@@ -8,7 +8,11 @@ conda create -n baktfold foldseek
 conda activate baktfold
 pip install -e .
 baktfold --help
-baktfold run -i tests/assembly_bakta_output/assembly.json  -o baktfold_output -f -t 8 -d ../baktfold_db/ 
+baktfold run -i tests/assembly_bakta_output/assembly.json  -o baktfold_output -f -t 8 -d ../baktfold_db/  
+
+baktfold run -i tests/assembly_bakta_output/assembly.json  -o baktfold_output -f -t 8 -d ../baktfold_db/   --custom_db ../baktfold_db/pdb
+baktfold run -i tests/assembly_bakta_output/assembly.json  -o baktfold_output -f -t 8 -d ../baktfold_db/   --custom_db ../baktfold_db/pdb --custom_annotations ../baktfold_db/pdb.tsv
+
 baktfold run -i tests/GCA_019351845.1_ASM1935184v1_bakta_output/GCA_019351845.1_ASM1935184v1_genomic.json  -o baktfold_output_GCA_019351845 -f -t 8 -d ../baktfold_db/ 
 
 baktfold run -i tests/ek_isolate6_bakta_output/ek_isolate6.json  -o baktfold_output_ek_isolate6 -f -t 8 -d ../baktfold_db/ 
@@ -29,6 +33,8 @@ foldseek makepaddedseqdb AFDBClusters AFDBClusters_gpu
 
 baktfold run -i tests/ek_isolate6_bakta_output/ek_isolate6.json  -o baktfold_output_ek_isolate6 -f -t 8 -d ../baktfold_db/ --foldseek_gpu
 
+baktfold run -i tests/ek_isolate6_bakta_output/ek_isolate6.json  -o baktfold_output_ek_isolate6 -f -t 8 -d ../baktfold_db/ --foldseek_gpu 
+
 
 bakta -d ../../bakta_db/db -o ek_isolate6_bakta_output -t 4 --force ek_isolate6.fasta
 
@@ -45,6 +51,11 @@ baktfold compare -i tests/assembly_bakta_output/assembly.json --predictions_dir 
 # using pdbs
 baktfold compare -i tests/assembly_bakta_output/assembly.json --structure_dir tests/pdbs  -o baktfold_output_compare -f -t 8 -d ../baktfold_db/ 
 baktfold compare -i tests/assembly_bakta_output/assembly.json --structure_dir tests/cifs  -o baktfold_output_compare -f -t 8 -d ../baktfold_db/ 
+
+# predict
+
+baktfold predict -i tests/assembly_bakta_output/assembly.json  -o baktfold_output_predict -f -t 8 -d ../baktfold_db/ 
+
 ```
 
 * Where the `baktfold_db` for now is the Phold DB (for ProstT5) along with
