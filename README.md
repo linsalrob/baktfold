@@ -8,10 +8,30 @@ conda create -n baktfold foldseek
 conda activate baktfold
 pip install -e .
 baktfold --help
+```
+
+## Test
+
+```bash
 baktfold run -i tests/assembly_bakta_output/assembly.json  -o baktfold_output -f -t 8 -d ../baktfold_db/  
 
+```
+
+
+## Notes
+
+
+```bash
+conda create -n baktfold foldseek
+conda activate baktfold
+pip install -e .
+baktfold --help
+baktfold run -i tests/assembly_bakta_output/assembly.json  -o baktfold_output -f -t 8 -d ../baktfold_db/  
+baktfold run -i tests/assembly_bakta_output/assembly.json  -o baktfold_output -f -t 8 -d ../baktfold_db/  --foldseek_gpu
+
+
 baktfold run -i tests/assembly_bakta_output/assembly.json  -o baktfold_output -f -t 8 -d ../baktfold_db/   --custom_db ../baktfold_db/pdb
-baktfold run -i tests/assembly_bakta_output/assembly.json  -o baktfold_output -f -t 8 -d ../baktfold_db/   --custom_db ../baktfold_db/pdb --custom_annotations ../baktfold_db/pdb.tsv
+baktfold run -i tests/assembly_bakta_output/assembly.json  -o baktfold_output -f -t 8 -d ../baktfold_db/   --custom_db tests/custom_db/dummy_custom_db --custom_annotations tests/dummy_custom_db_annotations.tsv
 
 baktfold run -i tests/GCA_019351845.1_ASM1935184v1_bakta_output/GCA_019351845.1_ASM1935184v1_genomic.json  -o baktfold_output_GCA_019351845 -f -t 8 -d ../baktfold_db/ 
 
@@ -55,7 +75,6 @@ baktfold compare -i tests/assembly_bakta_output/assembly.json --structure_dir te
 # predict
 
 baktfold predict -i tests/assembly_bakta_output/assembly.json  -o baktfold_output_predict -f -t 8 -d ../baktfold_db/ 
-
 ```
 
 * Where the `baktfold_db` for now is the Phold DB (for ProstT5) along with
@@ -269,3 +288,19 @@ awk '!seen[$0]++' pdb_clean.tsv > pdb_unique.tsv
 mv pdb_unique.tsv pdb.tsv
 rm pdb_clean.tsv
 ```
+
+## 13 October Custom DB
+
+* Test custom DB consists of the files in `tests/pdbs/`
+
+```bash 
+# from tests/
+mkdir -p custom_db
+cd custom_db
+foldseek createdb ../pdbs dummy_custom_db
+head dummy_custom_db_h
+# MEGJMN_003
+# MEGJMN_005
+```
+
+* Then create a dummy custom annotations csv

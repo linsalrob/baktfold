@@ -22,6 +22,7 @@ def mask_low_confidence_aa(sequence, scores, threshold=0.5):
                    for aa, score in zip(sequence, *scores))
 
 def subcommand_predict(
+    hypotheticals: dict,
     cds_dict: dict,
     output: Path,
     prefix: str,
@@ -41,6 +42,7 @@ def subcommand_predict(
     Wrapper command for baktfold predict. Predicts embeddings using ProstT5 encoder + CNN prediction head.
 
     Args:
+        hypotheticals (Dict[str, any]): feature dict for all Bakta hypothetical proteins
         cds_dict (Dict[str, any]): id:aa dictionary
         output (str): Output directory path.
         prefix (str): Prefix for output file names.
@@ -55,7 +57,7 @@ def subcommand_predict(
         save_per_protein_embeddings (bool, optional): Whether to save mean per protein embeddings to h5 file. Defaults to False.
 
     Returns:
-        bool: True if prediction succeeds, False otherwise.
+        hypotheticals (Dict[str, any]): feature dict for all Bakta hypothetical proteins. Updated with ProstT5 3Di strings (unmasked)
     """
 
     logger.info('Predicting 3Di sequences using ProstT5')
@@ -82,6 +84,7 @@ def subcommand_predict(
         output_probs = True
 
     prediction_dict = get_embeddings(
+        hypotheticals,
         cds_dict,
         output,
         prefix,
@@ -106,6 +109,16 @@ def subcommand_predict(
 
     mask_prop_threshold = mask_threshold/100
 
+    #######
+    # update the feature dict with 3Di 
+    # easiest just 
+    #######
+
+
+  
+    # for feat in hypotheticals:
+    #     pred = prediction_dict.get(feat['locus']) # None if it doesn't exist
+    #     feat['3di'] = pred[2].tolist() if pred is not None else None
 
     ########
     ## write the AA CDS to file
@@ -135,4 +148,4 @@ def subcommand_predict(
             out_f.write(f"{prot_seq}\n")
    
 
-    return True
+    return hypotheticals

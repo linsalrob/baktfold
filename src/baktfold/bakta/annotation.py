@@ -71,19 +71,22 @@ def combine_annotation(feature: dict):
 
         ####
         # hierarchy
+        # if it exists, custom is at the top
+        # custom
+        # if not
         # 1. SwissProt
         # 2. AFDB
         # 3. PDB
         ####
 
-        if swissprot_entry:
+        if custom_entry:
+            pstc_product = custom_entry['description'] 
+        elif swissprot_entry:
             pstc_product = swissprot_entry['description']
         elif afdb_entry:
             pstc_product = afdb_entry['description'] 
         elif pdb_entry:
             pstc_product = pdb_entry['description'] 
-        elif custom_entry:
-            pstc_product = custom_entry['description'] 
         else:
             pstc_product = None
 

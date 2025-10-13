@@ -335,7 +335,10 @@ def run(
     model_name = "Rostlab/ProstT5_fp16"
     checkpoint_path = Path(CNN_DIR) / "cnn_chkpnt" / "model.pt"
 
-    subcommand_predict(
+    # hypotheticals is input to the function as it updates the 3Di feature
+
+    hypotheticals = subcommand_predict(
+        hypotheticals,
         cds_dict,
         output,
         prefix,
@@ -353,6 +356,8 @@ def run(
     )
 
     # baktfold compare
+
+
 
     # predictions_dir is output as this will be where it lives for 'run'
 

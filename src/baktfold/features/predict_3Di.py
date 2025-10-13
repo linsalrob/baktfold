@@ -199,18 +199,18 @@ def write_embeddings(
 
 
 def write_predictions(
+    hypotheticals: Dict,
     predictions: Dict[str, Tuple[List[str], Any, Any]],
     out_path: Path,
-    proteins_flag: bool,
     mask_threshold: float
 ) -> None:
     """
     Write predictions to an output file.
 
     Args:
+        hypotheticals Dict: Hypothetical protein feature dictionary from Bakta
         predictions (Dict[str,  Tuple[List[str], Any, Any]]): Predictions dictionary containing sequence IDs, predictions, and additional information.
         out_path (Path): Path to the output file.
-        proteins_flag (bool): Flag indicating whether the predictions are in proteins mode or not.
         mask_threshold (float): between 0 and 100 - below this ProstT5 confidence, 3Di predictions are masked
 
 
@@ -249,6 +249,7 @@ def write_predictions(
         k: v for k, v in predictions.items() if len(v[0]) > 0
     }
 
+
     # mask low confidence residues
     for seq_id, (pred, mean_prob, all_prob) in predictions.items():
 
@@ -258,38 +259,17 @@ def write_predictions(
                 pred[i] = 20
 
     with open(out_path, "w+") as out_f:
+        for feat in hypotheticals:
+            seq_id = feat["locus"]
+            pred = predictions.get(seq_id)  # predictions = {seq_id: (yhats, _, _)} or None
 
-        if proteins_flag is True:
-            # no contig_id
-            out_f.write(
-                "".join(
-                    [
-                        ">{}\n{}\n".format(
-                            f"{seq_id}",
-                            "".join(
-                                list(map(lambda yhat: ss_mapping[int(yhat)], yhats))
-                            ),
-                        )
-                        for seq_id, (yhats, _, _) in predictions.items()
-                    ]
-                )
-            )
-
-        else:
-            # writes each CDS to a 3di FASTA 
-            out_f.write(
-                "".join(
-                    [
-                        ">{}\n{}\n".format(
-                            f"{seq_id}",
-                            "".join(
-                                list(map(lambda yhat: ss_mapping[int(yhat)], yhats))
-                            ),
-                        )
-                        for seq_id, (yhats, _, _) in predictions.items()
-                    ]
-                )
-            )
+            if pred is not None:
+                yhats = pred[0]  
+                threedi_seq = "".join(ss_mapping[int(yhat)] for yhat in yhats)
+                feat["3di"] = threedi_seq  # update the feature dictionary
+                out_f.write(f">{seq_id}\n{threedi_seq}\n")
+            else:
+                feat["3di"] = None  # missing prediction
 
     logger.info(f"Finished writing results to {out_path}")
     return None
@@ -392,7 +372,8 @@ def load_predictor(checkpoint_path: Union[str, Path]) -> CNN:
 
 
 def get_embeddings(
-    cds_dict: Dict[str, Dict[str, Tuple[str, ...]]],
+    hypotheticals: Dict[str, Tuple[str, ...]],
+    cds_dict: Dict[str, Tuple[str, ...]],
     out_path: Path,
     prefix: str,
     model_dir: Path,
@@ -417,7 +398,8 @@ def get_embeddings(
     Generate embeddings and predictions for protein sequences using ProstT5 encoder & CNN prediction head.
 
     Args:
-        cds_dict (Dict[str, Dict[str, Tuple[str, ...]]]): nested dictionary containing contig IDs, CDS IDs and corresponding protein sequences.
+        hypotheticals ( Dict[str, Tuple[str, ...]]):  dictionary containing CDS IDs feature information
+        cds_dict ( Dict[str, Tuple[str, ...]]):  dictionary containing CDS IDs and corresponding protein sequences.
         out_path (Path): Path to the output directory.
         prefix (str): Prefix for the output files.
         model_dir (Path): Directory containing the pre-trained model.
@@ -654,7 +636,7 @@ def get_embeddings(
             tsv_writer = csv.writer(file, delimiter="\t")
             tsv_writer.writerows(data_as_list_of_lists)
 
-    write_predictions(predictions, output_3di, proteins_flag, mask_threshold)
+    write_predictions(hypotheticals, predictions, output_3di,  mask_threshold)
 
     if save_per_residue_embeddings:
         write_embeddings(embeddings_per_residue, output_h5_per_residue)
