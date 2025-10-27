@@ -1298,7 +1298,6 @@ def install(
     ctx,
     database,
     foldseek_gpu,
-    extended_db,
     threads,
     **kwargs,
 ):
