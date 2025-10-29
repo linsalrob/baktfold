@@ -38,7 +38,7 @@ with sqlite3.connect(str(db_path), isolation_level='EXCLUSIVE') as conn:
     log_pstc.info('DROP TABLE IF EXISTS afdbclusters;')
     stmt = '''CREATE TABLE afdbclusters (
         id TEXT PRIMARY KEY,
-        product INTEGER NOT NULL
+        product TEXT NOT NULL
         ) WITHOUT ROWID;'''
     stmt = ' '.join(stmt.replace('\n', '').split())
     conn.execute(stmt)
@@ -51,7 +51,7 @@ with sqlite3.connect(str(db_path), isolation_level='EXCLUSIVE') as conn:
     log_pstc.info('DROP TABLE IF EXISTS swissprot;')
     stmt = '''CREATE TABLE swissprot (
         id TEXT PRIMARY KEY,
-        product INTEGER NOT NULL
+        product TEXT NOT NULL
         ) WITHOUT ROWID;'''
     stmt = ' '.join(stmt.replace('\n', '').split())
     conn.execute(stmt)
@@ -64,7 +64,21 @@ with sqlite3.connect(str(db_path), isolation_level='EXCLUSIVE') as conn:
     log_pstc.info('DROP TABLE IF EXISTS pdb;')
     stmt = '''CREATE TABLE pdb (
         id TEXT PRIMARY KEY,
-        product INTEGER NOT NULL
+        product TEXT NOT NULL
+        ) WITHOUT ROWID;'''
+    stmt = ' '.join(stmt.replace('\n', '').split())
+    conn.execute(stmt)
+    log_pstc.info(stmt)
+    conn.commit()
+    print('\t...done')
+
+    print('create SQL table CATH...')
+    conn.execute('DROP TABLE IF EXISTS cath;')
+    log_pstc.info('DROP TABLE IF EXISTS cath;')
+    stmt = '''CREATE TABLE cath (
+        id TEXT PRIMARY KEY,
+        cath_class TEXT NOT NULL,
+        product TEXT NOT NULL
         ) WITHOUT ROWID;'''
     stmt = ' '.join(stmt.replace('\n', '').split())
     conn.execute(stmt)

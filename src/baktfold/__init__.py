@@ -102,7 +102,7 @@ def predict_options(func):
     """predict command line args"""
     options = [
         click.option(
-            "--batch_size",
+            "--batch-size",
             default=1,
             help="batch size for ProstT5. 1 is usually fastest.",
             show_default=True,
@@ -113,22 +113,22 @@ def predict_options(func):
             help="Use cpus only.",
         ),
         click.option(
-            "--omit_probs",
+            "--omit-probs",
             is_flag=True,
             help="Do not output per residue 3Di probabilities from ProstT5. Mean per protein 3Di probabilities will always be output.",
         ),
         click.option(
-            "--save_per_residue_embeddings",
+            "--save-per-residue-embeddings",
             is_flag=True,
             help="Save the ProstT5 embeddings per resuide in a h5 file ",
         ),
         click.option(
-            "--save_per_protein_embeddings",
+            "--save-per-protein-embeddings",
             is_flag=True,
             help="Save the ProstT5 embeddings as means per protein in a h5 file",
         ),
         click.option(
-            "--mask_threshold",
+            "--mask-threshold",
             default=25,
             help="Masks 3Di residues below this value of ProstT5 confidence for Foldseek searches",
             type=float,
@@ -165,39 +165,39 @@ def compare_options(func):
             show_default=True,
         ),
         click.option(
-            "--keep_tmp_files",
+            "--keep-tmp-files",
             is_flag=True,
             help="Keep temporary intermediate files, particularly the large foldseek_results.tsv of all Foldseek hits",
         ),
         click.option(
-            "--max_seqs",
+            "--max-seqs",
             type=int,
             default=1000,
             show_default=True,
             help="Maximum results per query sequence allowed to pass the prefilter. You may want to reduce this to save disk space for enormous datasets",
         ),
         click.option(
-            "--ultra_sensitive",
+            "--ultra-sensitive",
             is_flag=True,
             help="Runs baktfold with maximum sensitivity by skipping Foldseek prefilter. Not recommended for large datasets.",
         ),
         click.option(
-            "--extra_foldseek_params",
+            "--extra-foldseek-params",
             type=str,
             help="Extra foldseek search params"
         ),
         click.option(
-            "--custom_db",
+            "--custom-db",
             type=str,
             help="Path to custom database"
         ),
         click.option(
-            "--foldseek_gpu",
+            "--foldseek-gpu",
             is_flag=True,
             help="Use this to enable compatibility with Foldseek-GPU search acceleration",
         ),
         click.option(
-            "--custom_annotations",
+            "--custom-annotations",
             type=click.Path(),
             help="Custom Foldseek DB annotations, 2 column tsv. Column 1 matches the Foldseek headers, column 2 is the description.",
         )
@@ -275,20 +275,20 @@ def run(
         "--prefix": prefix,
         "--evalue": evalue,
         "--database": database,
-        "--batch_size": batch_size,
+        "--batch-size": batch_size,
         "--sensitivity": sensitivity,
-        "--keep_tmp_files": keep_tmp_files,
+        "--keep-tmp-files": keep_tmp_files,
         "--cpu": cpu,
         "--omit_probs": omit_probs,
-        "--max_seqs": max_seqs,
-        "--save_per_residue_embeddings": save_per_residue_embeddings,
-        "--save_per_protein_embeddings": save_per_protein_embeddings,
-        "--ultra_sensitive": ultra_sensitive,
-        "--mask_threshold": mask_threshold,
-        "--extra_foldseek_params": extra_foldseek_params,
-        "--custom_db": custom_db,
-        "--custom_annotations": custom_annotations,
-        "--foldseek_gpu": foldseek_gpu,
+        "--max-seqs": max_seqs,
+        "--save-per-residue-embeddings": save_per_residue_embeddings,
+        "--save-per-protein-embeddings": save_per_protein_embeddings,
+        "--ultra-sensitive": ultra_sensitive,
+        "--mask-threshold": mask_threshold,
+        "--extra-foldseek-params": extra_foldseek_params,
+        "--custom-db": custom_db,
+        "--custom-annotations": custom_annotations,
+        "--foldseek-gpu": foldseek_gpu,
     }
 
     # initial logging etc
@@ -424,15 +424,14 @@ def run(
     # genes_with_improved_symbols = anno.select_gene_symbols([feature for feature in features if feature['type'] in [bc.FEATURE_CDS, bc.FEATURE_SORF]])
     # print(f'\trevised gene symbols: {len(genes_with_improved_symbols)}')
 
-
     ####
     # bakta output module
     ####
 
 
 
-    logger.info('writing bakta outputs')
-    io.write_bakta_outputs(data,features, features_by_sequence, output, prefix, custom_db)
+    logger.info('writing baktfold outputs')
+    io.write_bakta_outputs(data, features, features_by_sequence, output, prefix, custom_db)
 
     # cleanup the temp files
     if not keep_tmp_files:
@@ -489,7 +488,7 @@ def proteins(
     custom_annotations,
     **kwargs,
 ):
-    """baktfold proteins then comapare all in one - GPU recommended"""
+    """baktfold proteins-predict then comapare all in one - GPU recommended"""
 
     # validates the directory  (need to before I start baktfold or else no log file is written)
     instantiate_dirs(output, force)
@@ -507,18 +506,18 @@ def proteins(
         "--database": database,
         "--batch_size": batch_size,
         "--sensitivity": sensitivity,
-        "--keep_tmp_files": keep_tmp_files,
+        "--keep-tmp-files": keep_tmp_files,
         "--cpu": cpu,
-        "--omit_probs": omit_probs,
-        "--max_seqs": max_seqs,
-        "--save_per_residue_embeddings": save_per_residue_embeddings,
-        "--save_per_protein_embeddings": save_per_protein_embeddings,
-        "--ultra_sensitive": ultra_sensitive,
-        "--mask_threshold": mask_threshold,
-        "--extra_foldseek_params": extra_foldseek_params,
-        "--custom_db": custom_db,
-        "--foldseek_gpu": foldseek_gpu,
-        "--custom_annotations": custom_annotations
+        "--omit-probs": omit_probs,
+        "--max-seqs": max_seqs,
+        "--save-per-residue_embeddings": save_per_residue_embeddings,
+        "--save-per-protein-embeddings": save_per_protein_embeddings,
+        "--ultra-sensitive": ultra_sensitive,
+        "--mask-threshold": mask_threshold,
+        "--extra-foldseek_params": extra_foldseek_params,
+        "--custom-db": custom_db,
+        "--foldseek-gpu": foldseek_gpu,
+        "--custom-annotations": custom_annotations
     }
 
     # initial logging etc
@@ -600,12 +599,11 @@ def proteins(
     for aa in aas:
         anno.combine_annotation(aa)  # add on PSTC annotations and mark hypotheticals
 
-    print(aas)
 
     ####
     # bakta output module
     ####
-    logger.info('writing bakta outputs')
+    logger.info('writing baktfold outputs')
 
     cfg.run_end = datetime.now()
     run_duration = (cfg.run_end - cfg.run_start).total_seconds()
@@ -689,12 +687,12 @@ def predict(
         "--force": force,
         "--prefix": prefix,
         "--database": database,
-        "--batch_size": batch_size,
+        "--batch-size": batch_size,
         "--cpu": cpu,
-        "--omit_probs": omit_probs,
-        "--save_per_residue_embeddings": save_per_residue_embeddings,
-        "--save_per_protein_embeddings": save_per_protein_embeddings,
-        "--mask_threshold": mask_threshold,
+        "--omit-probs": omit_probs,
+        "--save-per-residue_embeddings": save_per_residue_embeddings,
+        "--save-per-protein-embeddings": save_per_protein_embeddings,
+        "--mask-threshold": mask_threshold,
 
     }
 
@@ -781,13 +779,13 @@ runs Foldseek using either 1) output of baktfold predict or 2) user defined prot
     required=True,
 )
 @click.option(
-    "--predictions_dir",
+    "--predictions-dir",
     help="Path to output directory from baktfold predict",
     type=click.Path(),
     default=None,
 )
 @click.option(
-    "--structure_dir",
+    "--structure-dir",
     help="Path to directory with .pdb or .cif file structures. The IDs need to be in the name of the file i.e id.pdb or id.cif",
     type=click.Path(),
     default=None,
@@ -833,15 +831,15 @@ def compare(
         "--evalue": evalue,
         "--database": database,
         "--sensitivity": sensitivity,
-        "--predictions_dir": predictions_dir,
-        "--structure_dir": structure_dir,
-        "--keep_tmp_files": keep_tmp_files,
-        "--max_seqs": max_seqs,
-        "--ultra_sensitive": ultra_sensitive,
-        "--extra_foldseek_params": extra_foldseek_params,
-        "--custom_db": custom_db,
-        "--custom_annotations": custom_annotations,
-        "--foldseek_gpu": foldseek_gpu,
+        "--predictions-dir": predictions_dir,
+        "--structure-dir": structure_dir,
+        "--keep-tmp-files": keep_tmp_files,
+        "--max-seqs": max_seqs,
+        "--ultra-sensitive": ultra_sensitive,
+        "--extra-foldseek-params": extra_foldseek_params,
+        "--custom-db": custom_db,
+        "--custom-annotations": custom_annotations,
+        "--foldseek-gpu": foldseek_gpu,
     }
 
     # initial logging etc
@@ -963,7 +961,7 @@ def compare(
     ####
     # bakta output module
     ####
-    logger.info('writing bakta outputs')
+    logger.info('writing baktfold outputs')
     io.write_bakta_outputs(data,features, features_by_sequence, output, prefix, custom_db)
 
     # cleanup the temp files
@@ -1027,12 +1025,12 @@ def proteins_predict(
         "--force": force,
         "--prefix": prefix,
         "--database": database,
-        "--batch_size": batch_size,
+        "--batch-size": batch_size,
         "--cpu": cpu,
-        "--omit_probs": omit_probs,
-        "--save_per_residue_embeddings": save_per_residue_embeddings,
-        "--save_per_protein_embeddings": save_per_protein_embeddings,
-        "--mask_threshold": mask_threshold,
+        "--omit-probs": omit_probs,
+        "--save-per-residue-embeddings": save_per_residue_embeddings,
+        "--save-per-protein-embeddings": save_per_protein_embeddings,
+        "--mask-threshold": mask_threshold,
 
     }
 
@@ -1154,15 +1152,15 @@ def proteins_compare(
         "--evalue": evalue,
         "--database": database,
         "--sensitivity": sensitivity,
-        "--predictions_dir": predictions_dir,
-        "--structure_dir": structure_dir,
-        "--keep_tmp_files": keep_tmp_files,
-        "--max_seqs": max_seqs,
-        "--ultra_sensitive": ultra_sensitive,
-        "--extra_foldseek_params": extra_foldseek_params,
-        "--custom_db": custom_db,
-        "--custom_annotations": custom_annotations,
-        "--foldseek_gpu": foldseek_gpu,
+        "--predictions-dir": predictions_dir,
+        "--structure-dir": structure_dir,
+        "--keep-tmp-files": keep_tmp_files,
+        "--max-seqs": max_seqs,
+        "--ultra-sensitive": ultra_sensitive,
+        "--extra-foldseek-params": extra_foldseek_params,
+        "--custom-db": custom_db,
+        "--custom-annotations": custom_annotations,
+        "--foldseek-gpu": foldseek_gpu,
     }
 
 
@@ -1233,12 +1231,12 @@ def proteins_compare(
     for aa in aas:
         anno.combine_annotation(aa)  # add on PSTC annotations and mark hypotheticals
 
-    print(aas)
+
 
     ####
     # bakta output module
     ####
-    logger.info('writing bakta outputs')
+    logger.info('writing baktfold outputs')
 
     cfg.run_end = datetime.now()
     run_duration = (cfg.run_end - cfg.run_start).total_seconds()
@@ -1282,7 +1280,7 @@ install command
     help="Specific path to install the baktfold database",
 )
 @click.option(
-    "--foldseek_gpu",
+    "--foldseek-gpu",
     is_flag=True,
     help="Use this to enable compatibility with Foldseek-GPU acceleration",
 )

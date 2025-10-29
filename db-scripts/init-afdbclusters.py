@@ -18,6 +18,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('--taxonomy', action='store', help='Path to NCBI taxonomy node.dmp file.')
 parser.add_argument('--xml', action='store', help='Path to filtered trembl xml file.')
+parser.add_argument('--missingxml', action='store', help='Path to filtered swissprot xml file for missing AFDB cluster entries.')
 parser.add_argument('--db', action='store', help='Path to Baktfold sqlite3 db file.')
 args = parser.parse_args()
 
@@ -31,6 +32,7 @@ DISCARDED_PRODUCTS = [
 
 taxonomy_path = Path(args.taxonomy).resolve()
 xml_path = Path(args.xml).resolve()
+missing_xml_path = Path(args.missingxml).resolve()
 db_path = Path(args.db)
 
 
@@ -64,6 +66,87 @@ print(f'\tstored tax ids: {len(taxonomy)}')
 print('parse & store PSTC information...')
 seq_hashes = set()  # unique protein sequences
 seen_accessions = set()
+
+
+with sqlite3.connect(str(db_path), isolation_level='EXCLUSIVE') as conn:
+    conn.execute('PRAGMA page_size = 4096;')
+    conn.execute('PRAGMA cache_size = 100000;')
+    conn.execute('PRAGMA locking_mode = EXCLUSIVE;')
+    conn.execute(f'PRAGMA mmap_size = {20 * 1024 * 1024 * 1024};')
+    conn.execute('PRAGMA synchronous = OFF;')
+    conn.execute('PRAGMA journal_mode = OFF')
+    conn.execute('PRAGMA threads = 2;')
+    conn.commit()
+    conn.row_factory = sqlite3.Row
+
+    db_updates = 0
+    ups_seqs = 0
+    pstc_seqs = 0
+
+    with xopen(str(missing_xml_path), mode='rb') as fh_xml, alive_bar(enrich_print=False) as bar:
+        for event, elem in et.iterparse(fh_xml, events=('end',)):
+                    # namespace wildcard
+                    if elem.tag.endswith('entry'):
+                        # Extract accession
+                        acc_elem = elem.find('./{*}accession')
+                        if acc_elem is None:
+                            elem.clear()
+                            continue
+                        accession = acc_elem.text.strip()
+
+                        if not accession in seen_accessions:
+
+                            # Extract organism info
+                            org_elem = elem.find('./{*}organism/{*}name[@type="scientific"]')
+                            organism = org_elem.text if org_elem is not None else ""
+                            tax_elem = elem.find('./{*}organism/{*}dbReference[@type="NCBI Taxonomy"]')
+                            tax_id = tax_elem.get('id') if tax_elem is not None else "1"
+
+                            # Extract protein name
+                            
+
+                            product_elem = elem.find('./{*}protein/{*}recommendedName/{*}fullName')
+                            product = product_elem.text if product_elem is not None else None
+                            if product and product.lower() in DISCARDED_PRODUCTS:
+                                product = "hypothetical protein" # None fails?
+
+                            # Extract sequence
+                            seq_elem = elem.find('./{*}sequence')
+                            if seq_elem is None:
+                                elem.clear()
+                                continue
+                            seq = seq_elem.text.replace('\n', '').strip().upper()
+                            length = len(seq)
+
+                            # Filter for bacteria or phage
+                            if is_taxon_child(tax_id, '2', taxonomy) or 'phage' in organism.lower():
+                                seq_hash = hashlib.md5(seq.encode())
+                                seq_hash_hex = seq_hash.hexdigest()
+                                seen_accessions.add(accession)
+                                seq_hashes.add(seq_hash_hex)
+
+                            # Store in SQLite
+                            conn.execute(
+                                "INSERT INTO afdbclusters (id, product) VALUES (?, ?)",
+                                (accession, product)
+                            )
+                            db_updates += 1
+                            pstc_seqs += 1
+
+                            elem.clear()
+                            bar()
+
+                            if db_updates % 100000 == 0:
+                                conn.commit()
+
+                        else:
+                            print(f"{accession} duplicated")
+
+        conn.commit()
+
+    print(f"✅ Stored {pstc_seqs:,} AFDB Cluster entries from Swissprot")
+
+conn.close()
 
 with sqlite3.connect(str(db_path), isolation_level='EXCLUSIVE') as conn:
     conn.execute('PRAGMA page_size = 4096;')
@@ -162,7 +245,9 @@ with sqlite3.connect(str(db_path), isolation_level='EXCLUSIVE') as conn:
 
         conn.commit()
 
-    print(f"✅ Stored {pstc_seqs:,} AFDB Cluster entries")
+    print(f"✅ Stored {pstc_seqs:,} AFDB Cluster entries from trembl")
+
+
 
 log_pstc.debug('summary: # AFDBCluster=%i', pstc_seqs)
 

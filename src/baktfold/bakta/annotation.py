@@ -69,7 +69,7 @@ def combine_annotation(feature: dict):
         # cath
         cath_entry = next((p for p in pstc if isinstance(p, dict) and p.get('source') == 'cath'), None)
         # custom
-        custom_entry = next((p for p in pstc if isinstance(p, dict) and p.get('source') == 'custom'), None)
+        custom_entry = next((p for p in pstc if isinstance(p, dict) and p.get('source') == 'custom_db'), None)
 
         ####
         # hierarchy
@@ -79,6 +79,7 @@ def combine_annotation(feature: dict):
         # 1. SwissProt
         # 2. AFDB
         # 3. PDB
+        # 4. CATH
         ####
 
         if custom_entry:
@@ -111,7 +112,7 @@ def combine_annotation(feature: dict):
                         db_xrefs.append(f"pdb:pdb_{eid}")
                     elif src == 'cath':
                         db_xrefs.append(f"cath:cath_{eid}")
-                    elif src == 'custom':
+                    elif src == 'custom_db':
                         db_xrefs.append(f"custom:custom_{eid}")
                     else:
                         db_xrefs.append(eid)

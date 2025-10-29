@@ -185,13 +185,13 @@ def map_aa_columns(feat: dict, custom_db: bool) -> Sequence[str]:
             feat['product'],
             ','.join([dbxref.replace('afdb_v6:', '') for dbxref in feat['db_xrefs'] if 'swissprot' in dbxref]),
             ','.join([dbxref.replace('afdb_v6:', '') for dbxref in feat['db_xrefs'] if 'afdbclusters_' in dbxref]),
-            ','.join([dbxref.replace('cath:', '') for dbxref in feat['db_xrefs'] if 'cath:' in dbxref]),
             ','.join([dbxref.replace('pdb:', '') for dbxref in feat['db_xrefs'] if 'pdb:' in dbxref]),
+            ','.join([dbxref.replace('cath:', '') for dbxref in feat['db_xrefs'] if 'cath:' in dbxref]),
         ]
 
 def write_protein_features(features: Sequence[dict], header_columns: Sequence[str], tsv_path: Path, custom_db: bool):
     """Export protein features in TSV format."""
-    logger.info('write protein feature tsv: path=%s', tsv_path)
+    logger.info(f'write protein feature tsv: path={tsv_path}')
 
     with tsv_path.open('wt') as fh:
         fh.write(f'#Annotated with Baktfold (v{cfg.version}): https://github.com/gbouras13/baktfold\n')

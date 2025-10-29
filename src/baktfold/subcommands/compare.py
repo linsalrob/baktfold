@@ -409,9 +409,15 @@ def subcommand_compare(
             aas = pstc.parse(aas, custom_df, 'custom_db')
 
         # get the lookup descriptions for each of them
-        # for the return rename hypotheticals
-        hypotheticals = pstc.lookup(aas, Path(database), custom_annotations)
+        # this requires the DB
 
+        #aas = pstc.lookup(aas, Path(database), custom_annotations)
+        aas = pstc.lookup_sql(aas, Path(database), threads)
+        # add the custom annotations if it is provided
+        if custom_annotations:
+            aas = pstc.lookup_custom(aas, Path(database), custom_annotations)
+
+        return aas
 
     else: # baktfold run
 
@@ -424,10 +430,12 @@ def subcommand_compare(
             hypotheticals = pstc.parse(hypotheticals, custom_df, 'custom_db')
 
         # get the lookup descriptions for each of them
-        hypotheticals = pstc.lookup(hypotheticals, Path(database), custom_annotations)
+        # hypotheticals = pstc.lookup(hypotheticals, Path(database), custom_annotations)
+        hypotheticals = pstc.lookup_sql(hypotheticals, Path(database), threads)
+        if custom_annotations:
+            hypotheticals = pstc.lookup_custom(hypotheticals, Path(database), custom_annotations)
 
-
-    return hypotheticals
+        return hypotheticals
 
 
     

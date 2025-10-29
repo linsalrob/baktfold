@@ -15,7 +15,7 @@ wrapper script over all io output submodules
 """
 
 def write_foldseek_tophit(tophit_df: pd.DataFrame, pdb_tophit_path: Path):
-    logger.info(f"Saving foldseek tophits against PDB to {pdb_tophit_path}")
+    logger.info(f"Saving foldseek tophits to {pdb_tophit_path}")
     tophit_df.to_csv(pdb_tophit_path, sep="\t", index=False)
 
 
@@ -108,9 +108,9 @@ def write_bakta_proteins_outputs(aas: Sequence[dict], output: Path, prefix: str,
     
     annotations_path: Path = Path(output) / f"{prefix}.tsv"
     if custom_db:
-        header_columns = ['ID', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'Custom_DB']
+        header_columns = ['ID', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH', 'Custom_DB']
     else:
-        header_columns = ['ID', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB']
+        header_columns = ['ID', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH']
     logger.info(f'Exporting annotations (TSV) to: {annotations_path}')
     tsv.write_protein_features(aas, header_columns, annotations_path, custom_db)
 

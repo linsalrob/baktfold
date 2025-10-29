@@ -104,7 +104,8 @@ def end_baktfold(start_time: float, subcommand: str) -> None:
 
     cfg.run_end = datetime.now()
     run_duration = (cfg.run_end - cfg.run_start).total_seconds()
-    logger.info(f'If you use these results please cite Bakta: https://doi.org/{bc.BAKTA_DOI}')
+    # logger.info(f'If you use these results please cite Baktfold: https://doi.org/{bc.BAKTA_DOI}')
+    logger.info(f'If you use these results please cite Baktfold: https://github.com/gbouras13/baktfold')
     logger.info(f'baktfold {subcommand} successfully finished in {int(run_duration / 60):02}:{int(run_duration % 60):02} [mm:ss].')
    
 

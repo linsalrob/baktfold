@@ -21,9 +21,9 @@ VERSION_DICTIONARY = {
         "major": 0,
         "minor": 0,
         "minorest": 1,
-        "db_url": "https://zenodo.org/records/10675285/files/baktfold_foldseek_db.tar.gz",
-        "dir_name": "baktfold_foldseek_db",
-        "tarball": "baktfold_foldseek_db.tar.gz",
+        "db_url": "https://zenodo.org/records/10675285/files/baktfold_db.tar.gz",
+        "dir_name": "baktfold_db",
+        "tarball": "baktfold_db.tar.gz",
         "prostt5_backup_url": "https://zenodo.org/records/11234657/files/models--Rostlab--ProstT5_fp16.tar.gz",
         "prostt5_backup_tarball": "models--Rostlab--ProstT5_fp16.tar.gz",
         "prostt5_backup_md5": "118c1997e6d2cb5025abda95d36681e0",
@@ -44,7 +44,19 @@ BAKTFOLD_DB_NAMES = [
     "AFDBClusters_ss",
     "AFDBClusters_ss.dbtype",
     "AFDBClusters_ss.index",
-    "AFDBClusters.tsv",
+    "baktfold.db",
+    "cath",
+    "cath_ca",
+    "cath_ca.dbtype",
+    "cath_ca.index",
+    "cath.dbtype",
+    "cath_h",
+    "cath_h.index",
+    "cath_h.dbtype",
+    "cath.index",
+    "cath_ss",
+    "cath_ss.dbtype",
+    "cath_ss.index",
     "pdb",
     "pdb_ca",
     "pdb_ca.dbtype",
@@ -57,7 +69,6 @@ BAKTFOLD_DB_NAMES = [
     "pdb_ss",
     "pdb_ss.dbtype",
     "pdb_ss.index",
-    "pdb.tsv",
     "swissprot",
     "swissprot_ca",
     "swissprot_ca.dbtype",
@@ -70,7 +81,6 @@ BAKTFOLD_DB_NAMES = [
     "swissprot_ss",
     "swissprot_ss.dbtype",
     "swissprot_ss.index",
-    "swissprot.tsv",
 ]
 
 
@@ -86,23 +96,57 @@ PROSTT5_MD5_DICTIONARY = {
     },
 }
 
-PROSTT5_FINETUNE_MD5_DICTIONARY = {
-    "refs": {"main": "833198a97a993b079841bb51b3096b6a"},
-    "blobs": {
-        "17ade346a1042cbe0c1436f5bedcbd85c099d582": "9583322ae544dfbdb0001350ab4c3fd9",
-        "474673ae9f1fcf1da9b939df0da5888abf0674af6e50546927b4edd4536b8897": "028128ddd5340a8bfb4151f562cb2091",
-        "47ce84c8a086256c31ca8aa555e55787f9368b3e": "865fce8e8f6db4ad9bbb0f9596438e1e",
-        "74da7b4afcde53faa570114b530c726135bdfcdb813dec3abfb27f9d44db7324": "6ad28d9980aaec37d3935072d204e520",
-        "7b4566bb3be907e8bba6c764ecd41d3388b81b79": "67183db6031983c323e7fbb0ae7dac57",
-        "a45ead5f5f3e3b842f660aa8e7ab2d66cbb959ad743f8677d0559c13f7f4a0c4": "b7cb2d32552a3d3cabf4db25e54fdb44",
-        "c72eadd6ad03b26932928906cd12a29586b9fd7217775cd8207fa38cd52ebaaf" : "5cacb3a7b9789143e6a28279a25a0bad",
-        "d91b97e1ea1225fcbc4e5ee14c09bb196251cee9" : "ce3c5c2e2e583314c72b3a5c823118f8"
-    },
-}
-
 
 baktfold_DB_FOLDSEEK_GPU_NAMES = [
-    "all_baktfold_structures_gpu"
+    "AFDBClusters_gpu",
+    "AFDBClusters_gpu_ca",
+    "AFDBClusters_gpu_ca.dbtype",
+    "AFDBClusters_gpu_ca.index",
+    "AFDBClusters_gpu.dbtype",
+    "AFDBClusters_gpu_h",
+    "AFDBClusters_gpu_h.index",
+    "AFDBClusters_gpu_h.dbtype",
+    "AFDBClusters_gpu.index",
+    "AFDBClusters_gpu_ss",
+    "AFDBClusters_gpu_ss.dbtype",
+    "AFDBClusters_gpu_ss.index",
+    "baktfold.db",
+    "cath_gpu",
+    "cath_gpu_ca",
+    "cath_gpu_ca.dbtype",
+    "cath_gpu_ca.index",
+    "cath_gpu.dbtype",
+    "cath_gpu_h",
+    "cath_gpu_h.index",
+    "cath_gpu_h.dbtype",
+    "cath_gpu.index",
+    "cath_gpu_ss",
+    "cath_gpu_ss.dbtype",
+    "cath_gpu_ss.index",
+    "pdb_gpu",
+    "pdb_gpu_ca",
+    "pdb_gpu_ca.dbtype",
+    "pdb_gpu_ca.index",
+    "pdb_gpu.dbtype",
+    "pdb_gpu_h",
+    "pdb_gpu_h.index",
+    "pdb_gpu_h.dbtype",
+    "pdb_gpu.index",
+    "pdb_gpu_ss",
+    "pdb_gpu_ss.dbtype",
+    "pdb_gpu_ss.index",
+    "swissprot_gpu",
+    "swissprot_gpu_ca",
+    "swissprot_gpu_ca.dbtype",
+    "swissprot_gpu_ca.index",
+    "swissprot_gpu.dbtype",
+    "swissprot_gpu_h",
+    "swissprot_gpu_h.index",
+    "swissprot_gpu_h.dbtype",
+    "swissprot_gpu.index",
+    "swissprot_gpu_ss",
+    "swissprot_gpu_ss.dbtype",
+    "swissprot_gpu_ss.index",
 ]
 
 
@@ -438,7 +482,7 @@ def validate_db(database: str, default_dir: str, foldseek_gpu: bool) -> Path:
 
 def foldseek_makepaddedseqdb(db_dir: Path) -> None:
 
-    dbs = ["AFDBClusters", "pdb", "swissprot"]
+    dbs = ["AFDBClusters", "pdb", "cath", "swissprot"]
     logdir = Path(db_dir) / "logdir"
 
     for db_name in dbs:

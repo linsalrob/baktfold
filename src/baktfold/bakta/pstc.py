@@ -1,8 +1,8 @@
 import logging
 import pandas as pd
-# import sqlite3
+import sqlite3
 
-# from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from typing import Sequence, Tuple
 
 # import baktfold.bakta.config as cfg
@@ -78,39 +78,9 @@ def parse(features: Sequence[dict], foldseek_df: pd.DataFrame, db_name: str = 's
     return features
 
 
-
-def lookup(features: Sequence[dict], baktfold_db: Path, custom_annotations: Path):
-    """Lookup PSTC information in swissprot"""
-    no_pscc_lookups = 0
-
-    # simple dictionary of accessions and protein_name
-    swissprot_dict = {}
-    with open(f"{baktfold_db}/swissprot.tsv", "r") as f:
-        reader = csv.reader(f, delimiter="\t")
-        for row in reader:
-            if len(row) >= 2:
-                swissprot_dict[row[0]] = row[1]
-
-    afdb_dict = {}
-    with open(f"{baktfold_db}/AFDBClusters.tsv", "r") as f:
-        reader = csv.reader(f, delimiter="\t")
-        for row in reader:
-            if len(row) >= 2:
-                afdb_dict[row[0]] = row[1]
-
-    pdb_dict = {}
-    with open(f"{baktfold_db}/pdb.tsv", "r") as f:
-        reader = csv.reader(f, delimiter="\t")
-        for row in reader:
-            if len(row) >= 2:
-                pdb_dict[row[0]] = row[1]
-
-    cath_dict = {}
-    with open(f"{baktfold_db}/cath.tsv", "r") as f:
-        reader = csv.reader(f, delimiter="\t")
-        for row in reader:
-            if len(row) >= 3:
-                pdb_dict[row[0]] = row[2] # 3 columns - the second is the CATH code
+def lookup_custom(features: Sequence[dict], baktfold_db: Path, custom_annotations: Path):
+    """Lookup PSTC information from custom db """
+    no_pstc_lookups = 0
 
     # custom
     if custom_annotations:
@@ -132,22 +102,11 @@ def lookup(features: Sequence[dict], baktfold_db: Path, custom_annotations: Path
         for entry in pstc_entries:
             accession = entry.get('id')
             source = entry.get('source')
-            if source == 'swissprot' and accession in swissprot_dict:
-                entry['description'] = swissprot_dict[accession]
-            elif source == 'afdb' and accession in afdb_dict:
-                entry['description'] = afdb_dict[accession]
-            elif source == 'pdb' and accession in pdb_dict:
-                entry['description'] = pdb_dict[accession]
-            elif source == 'cath' and accession in cath_dict:
-                entry['description'] = cath_dict[accession]
-            elif source == 'custom_db':
+            if source == 'custom_db':
                 if accession in custom_dict:
                     entry['description'] = custom_dict[accession]
                 else:
                     entry['description'] = accession # mark as accession if no annotation given for custom for now
-            else:
-                # Keep "hypothetical protein" for missing
-                entry['description'] = "hypothetical protein"
 
         # Write back normalized list or single entry
         feat['pstc'] = pstc_entries if isinstance(pstc, list) else pstc_entries[0]
@@ -155,64 +114,160 @@ def lookup(features: Sequence[dict], baktfold_db: Path, custom_annotations: Path
     return features
 
 
-
-
-
-# def lookup(features: Sequence[dict], pseudo: bool = False):
-#     """Lookup PSCC information"""
+# def lookup(features: Sequence[dict], baktfold_db: Path, custom_annotations: Path):
+#     """Lookup PSTC information"""
 #     no_pscc_lookups = 0
-#     try:
-#         rec_futures = []
-#         with sqlite3.connect(f"file:{cfg.db_path.joinpath('bakta.db')}?mode=ro&nolock=1&cache=shared", uri=True, check_same_thread=False) as conn:
-#             conn.execute('PRAGMA omit_readlock;')
-#             conn.row_factory = sqlite3.Row
-#             with ThreadPoolExecutor(max_workers=max(10, cfg.threads)) as tpe:  # use min 10 threads for IO bound non-CPU lookups
-#                 for feature in features:
-#                     uniref50_id = None
-#                     if(pseudo):  # if pseudogene use pseudogene info
-#                         if('psc' in feature[bc.PSEUDOGENE]):
-#                             uniref50_id = feature[bc.PSEUDOGENE]['psc'].get(DB_PSCC_COL_UNIREF50, None)
-#                     else:
-#                         if('psc' in feature):
-#                             uniref50_id = feature['psc'].get(DB_PSCC_COL_UNIREF50, None)
-#                         elif('pscc' in feature):
-#                             uniref50_id = feature['pscc'].get(DB_PSCC_COL_UNIREF50, None)
-#                     if(uniref50_id is not None):
-#                         if(bc.DB_PREFIX_UNIREF_50 in uniref50_id):
-#                             uniref50_id = uniref50_id[9:]  # remove 'UniRef50_' prefix
-#                         future = tpe.submit(fetch_db_pscc_result, conn, uniref50_id)
-#                         rec_futures.append((feature, future))
 
-#         for (feature, future) in rec_futures:
-#             rec = future.result()
-#             if(rec is not None):
-#                 pscc = parse_annotation(rec)
-#                 if(pseudo):
-#                     feature[bc.PSEUDOGENE]['pscc'] = pscc
+#     # simple dictionary of accessions and protein_name
+#     swissprot_dict = {}
+#     with open(f"{baktfold_db}/swissprot.tsv", "r") as f:
+#         reader = csv.reader(f, delimiter="\t")
+#         for row in reader:
+#             if len(row) >= 2:
+#                 swissprot_dict[row[0]] = row[1]
+
+#     afdb_dict = {}
+#     with open(f"{baktfold_db}/AFDBClusters.tsv", "r") as f:
+#         reader = csv.reader(f, delimiter="\t")
+#         for row in reader:
+#             if len(row) >= 2:
+#                 afdb_dict[row[0]] = row[1]
+
+#     pdb_dict = {}
+#     with open(f"{baktfold_db}/pdb.tsv", "r") as f:
+#         reader = csv.reader(f, delimiter="\t")
+#         for row in reader:
+#             if len(row) >= 2:
+#                 pdb_dict[row[0]] = row[1]
+
+#     cath_dict = {}
+#     with open(f"{baktfold_db}/cath.tsv", "r") as f:
+#         reader = csv.reader(f, delimiter="\t")
+#         for row in reader:
+#             if len(row) >= 3:
+#                 pdb_dict[row[0]] = row[2] # 3 columns - the second is the CATH code
+
+#     # custom
+#     if custom_annotations:
+#         custom_dict = {}
+#         with open(f"{custom_annotations}", "r") as f:
+#             reader = csv.reader(f, delimiter="\t")
+#             for row in reader:
+#                 if len(row) >= 2:
+#                     custom_dict[row[0]] = row[1]
+
+#     for feat in features:
+#         pstc = feat.get('pstc')
+#         if not pstc:
+#             continue
+
+#         # Normalize to list for consistent handling
+#         pstc_entries = pstc if isinstance(pstc, list) else [pstc]
+
+#         for entry in pstc_entries:
+#             accession = entry.get('id')
+#             source = entry.get('source')
+#             if source == 'swissprot' and accession in swissprot_dict:
+#                 entry['description'] = swissprot_dict[accession]
+#             elif source == 'afdb' and accession in afdb_dict:
+#                 entry['description'] = afdb_dict[accession]
+#             elif source == 'pdb' and accession in pdb_dict:
+#                 entry['description'] = pdb_dict[accession]
+#             elif source == 'cath' and accession in cath_dict:
+#                 entry['description'] = cath_dict[accession]
+#             elif source == 'custom_db':
+#                 if accession in custom_dict:
+#                     entry['description'] = custom_dict[accession]
 #                 else:
-#                     if('pscc' in feature):
-#                         feature['pscc'] = {**feature['pscc'], **pscc}  # merge dicts, add PSCC annotation info to PSCC alignment info
-#                     else:
-#                         feature['pscc'] = pscc  # add PSCC annotation info
-#                 no_pscc_lookups += 1
-#                 log.debug(
-#                     'lookup: seq=%s, start=%i, stop=%i, strand=%s, UniRef50=%s, product=%s',
-#                     feature['sequence'], feature['start'], feature['stop'], feature['strand'], pscc.get(DB_PSCC_COL_UNIREF50, ''), pscc.get(DB_PSCC_COL_PRODUCT, '')
-#                 )
+#                     entry['description'] = accession # mark as accession if no annotation given for custom for now
 #             else:
-#                 log.debug('lookup: ID not found! uniref50_id=%s', uniref50_id)
-#     except Exception as ex:
-#         log.exception('Could not read PSCCs from db!', ex)
-#         raise Exception('SQL error!', ex)
-#     log.info('looked-up=%i', no_pscc_lookups)
+#                 # Keep "hypothetical protein" for missing
+#                 entry['description'] = "hypothetical protein"
+
+#         # Write back normalized list or single entry
+#         feat['pstc'] = pstc_entries if isinstance(pstc, list) else pstc_entries[0]
+
+#     return features
 
 
-# def fetch_db_pscc_result(conn: sqlite3.Connection, uniref50_id: str):
-#     c = conn.cursor()
-#     c.execute('select * from pscc where uniref50_id=?', (uniref50_id,))
-#     rec = c.fetchone()
-#     c.close()
-#     return rec
+def fetch_sql_description(conn, source, accession):
+    table_map = {
+        'swissprot': 'swissprot',
+        'afdb': 'afdbclusters',
+        'pdb': 'pdb',
+        'cath': 'cath',
+    }
+
+    table = table_map.get(source)
+    if table is None:
+        return None
+
+    # special case for cath, which has a 'product' column
+    if table == 'cath':
+        cursor = conn.execute("SELECT product FROM cath WHERE id = ?", (accession,))
+    else:
+        cursor = conn.execute(f"SELECT product FROM {table} WHERE id = ?", (accession,))
+    
+    row = cursor.fetchone()
+    return row[0] if row else None
+
+
+# add custom later
+def lookup_sql(features: Sequence[dict], baktfold_db: Path, threads: int):
+    """Lookup PSTC information"""
+    no_pstc_lookups = 0
+    # try:
+    rec_futures = []
+    logger.info("Looking up PSTC descriptions")
+    with sqlite3.connect(f"file:{baktfold_db.joinpath('baktfold.db')}?mode=ro&nolock=1&cache=shared", uri=True, check_same_thread=False) as conn:
+        conn.execute('PRAGMA omit_readlock;')
+        conn.row_factory = sqlite3.Row
+        with ThreadPoolExecutor(max_workers=max(10, threads)) as tpe:  # use min 10 threads for IO bound non-CPU lookups
+            for feat in features:
+                pstc = feat.get('pstc')
+                if not pstc:
+                    continue
+
+                # Normalize to list for consistent handling
+                pstc_entries = pstc if isinstance(pstc, list) else [pstc]
+
+                rec_futures = []
+                for entry in pstc_entries:
+                    accession = entry.get('id')
+                    source = entry.get('source')
+
+                    # submit database query as a future
+                    future = tpe.submit(fetch_sql_description, conn, source, accession)
+                    rec_futures.append((entry, future))
+
+
+                # Collect results
+                for entry, future in rec_futures:
+                    desc = future.result()
+                    if desc:
+                        entry['description'] = desc
+                    else:
+                        if entry.get('source') == 'custom_db':
+                            entry['description'] = accession  # keep accession if custom_db but missing
+                        else:
+                            entry['description'] = "hypothetical protein"
+
+            # Write back normalized list or single entry
+            feat['pstc'] = pstc_entries if isinstance(pstc, list) else pstc_entries[0]
+    
+    # except Exception as ex:
+    #     logger.error('Could not read PSTCs from db!')
+    #     raise Exception('SQL error!', ex)
+    # log.info('looked-up=%i', no_pstc_lookups)
+
+    return features
+
+def fetch_db_pscc_result(conn: sqlite3.Connection, uniref50_id: str):
+    c = conn.cursor()
+    c.execute('select * from pscc where uniref50_id=?', (uniref50_id,))
+    rec = c.fetchone()
+    c.close()
+    return rec
 
 
 # def parse_annotation(rec) -> dict:
