@@ -17,11 +17,11 @@ CURRENT_DB_VERSION: str = "0.0.1"
 # to hold information about the different DBs
 VERSION_DICTIONARY = {
     "0.0.1": {
-        "md5": "353a1a6763e1261c5c44e1e2da9d8736",
+        "md5": "b1eba2ac1a35e9c34b125887cb4aaf51",
         "major": 0,
         "minor": 0,
         "minorest": 1,
-        "db_url": "https://zenodo.org/records/10675285/files/baktfold_db.tar.gz",
+        "db_url": "https://zenodo.org/records/17347516/files/baktfold_db.tar.gz",
         "dir_name": "baktfold_db",
         "tarball": "baktfold_db.tar.gz",
         "prostt5_backup_url": "https://zenodo.org/records/11234657/files/models--Rostlab--ProstT5_fp16.tar.gz",
@@ -29,6 +29,7 @@ VERSION_DICTIONARY = {
         "prostt5_backup_md5": "118c1997e6d2cb5025abda95d36681e0",
     },
 }
+
 
 
 BAKTFOLD_DB_NAMES = [
@@ -110,7 +111,6 @@ baktfold_DB_FOLDSEEK_GPU_NAMES = [
     "AFDBClusters_gpu_ss",
     "AFDBClusters_gpu_ss.dbtype",
     "AFDBClusters_gpu_ss.index",
-    "baktfold.db",
     "cath_gpu",
     "cath_gpu_ca",
     "cath_gpu_ca.dbtype",
