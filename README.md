@@ -53,6 +53,11 @@ baktfold run -i tests/assembly_bakta_output/assembly.json  -o baktfold_output -f
 
 ## Usage
 
+* The two most useful commands are `baktfold run` and `baktfold proteins`
+* `baktfold run` accepts a __Bakta json file__ as its input, and by default, it will annotate all hypothetical CDS and return a variety of Bakta-like compliant output formats. All other annotations will be inherited from the Bakta output
+* `baktfold proteins` accepts a protein FASTA `.faa` format file as input. It will annotate all protein sequences and return a variety of `bakta_proteins`-like output formats
+* `baktfold predict` and `baktfold compare` split `baktfold run` into the ProstT5 and Foldseek modules, while `baktfold proteins-predict` and `baktfold proteins-compare` do the same for `baktfold proteins` (useful if you have non-NVIDIA GPUs)
+
 * It is recommend you run baktfold with a GPU if you can.
 * If you do not have a GPU, baktfold will still run, but the ProstT5 step will be fairly slow.
 * If you have a NVIDIA GPU, you can also use the `--foldseek-gpu` parameter to accelerate Foldseek further
@@ -74,11 +79,6 @@ Commands:
   proteins-predict  Runs ProstT5 on a multiFASTA input - GPU recommended
   run               baktfold predict then comapare all in one - GPU...
 ```
-
-* The two most useful commands are `baktfold run` and `baktfold proteins`
-* `baktfold run` accepts a Bakta json file as its input, and by default, it will annotate all hypothetical CDS and return a variety of Bakta-like compliant output formats. All other annotations will be inherited from the Bakta output
-* `baktfold proteins` accepts a protein FASTA `.faa` format file as input. It will annotate all protein sequences and return a variety of `bakta_proteins`-like output formats
-* `baktfold predict` and `baktfold compare` split `baktfold run` into the ProstT5 and Foldseek modules, while `baktfold proteins-predict` and `baktfold proteins-compare` do the same for `baktfold proteins` (useful if you have non-NVIDIA GPUs)
 
 ```bash
 Usage: baktfold run [OPTIONS]
