@@ -1,0 +1,10 @@
+"""
+holds command line options for pytest
+
+"""
+
+
+def pytest_addoption(parser):
+    parser.addoption("--gpu-available", action="store_true")
+    parser.addoption("--nvidia", action="store_true")
+    parser.addoption("--threads", action="store", default=1)

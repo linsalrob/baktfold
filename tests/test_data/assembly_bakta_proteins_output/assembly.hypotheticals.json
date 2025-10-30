@@ -1,0 +1,722 @@
+{
+    "features": [
+        {
+            "id": "MEGJMN_003",
+            "description": "hypothetical protein",
+            "aa": "MRFSITNSGTSQTHFRIILEYVSCLICFIDKHVRGRHV",
+            "length": 38,
+            "type": "cds",
+            "locus": "MEGJMN_003",
+            "aa_hexdigest": "5e6600c5b5adb595c1e6bf28769611c5",
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [],
+            "seq_stats": {
+                "molecular_weight": 4466.1776,
+                "isoelectric_point": 9.495048713684085
+            }
+        },
+        {
+            "id": "MEGJMN_005",
+            "description": "hypothetical protein",
+            "aa": "MTNQPATASQKTDEVANKTTPSMTVDTIFSATGFTPLQWVAMEREHS",
+            "length": 47,
+            "type": "cds",
+            "locus": "MEGJMN_005",
+            "aa_hexdigest": "97ff90425da7e79099736043a5a17de6",
+            "ups": {
+                "uniparc_id": "UPI0007224B15",
+                "ncbi_nrp_id": "WP_248299255.1",
+                "uniref100_id": "UniRef100_A0A6C0NCX4",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniParc:UPI0007224B15",
+                    "RefSeq:WP_248299255.1",
+                    "UniRef:UniRef100_A0A6C0NCX4"
+                ]
+            },
+            "ips": {
+                "uniref100_id": "UniRef100_A0A6C0NCX4",
+                "uniref90_id": "UniRef90_A0A142EBE8"
+            },
+            "psc": {
+                "uniref90_id": "UniRef90_A0A142EBE8",
+                "uniref50_id": "UniRef50_A0A142EBE8"
+            },
+            "pscc": {
+                "uniref50_id": "UniRef50_A0A142EBE8",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniRef:UniRef50_A0A142EBE8"
+                ]
+            },
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "RefSeq:WP_248299255.1",
+                "SO:0001217",
+                "UniParc:UPI0007224B15",
+                "UniRef:UniRef100_A0A6C0NCX4",
+                "UniRef:UniRef50_A0A142EBE8",
+                "UniRef:UniRef90_A0A142EBE8"
+            ],
+            "seq_stats": {
+                "molecular_weight": 5157.6789,
+                "isoelectric_point": 4.895906257629394
+            }
+        },
+        {
+            "id": "MEGJMN_010",
+            "description": "hypothetical protein",
+            "aa": "MDEKEVNFSLSYEQLAATTTEVIEAIKKRQDQTTAAKISSVEAVIFLWSELAKAGASDFSPVQADLRRFQERVAGMKE",
+            "length": 78,
+            "type": "cds",
+            "locus": "MEGJMN_010",
+            "aa_hexdigest": "8b7f55a9d39a637ba86934ded79a52df",
+            "ups": {
+                "uniparc_id": "UPI000760AAA3",
+                "ncbi_nrp_id": "WP_060415434.1",
+                "uniref100_id": "UniRef100_A0A8B3MBM4",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniParc:UPI000760AAA3",
+                    "RefSeq:WP_060415434.1",
+                    "UniRef:UniRef100_A0A8B3MBM4"
+                ]
+            },
+            "ips": {
+                "uniref100_id": "UniRef100_A0A8B3MBM4",
+                "uniref90_id": "UniRef90_A0A8B3MBM4"
+            },
+            "psc": {
+                "uniref90_id": "UniRef90_A0A8B3MBM4",
+                "uniref50_id": "UniRef50_A0A8B3MBM4"
+            },
+            "pscc": {
+                "uniref50_id": "UniRef50_A0A8B3MBM4",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniRef:UniRef50_A0A8B3MBM4"
+                ]
+            },
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "RefSeq:WP_060415434.1",
+                "SO:0001217",
+                "UniParc:UPI000760AAA3",
+                "UniRef:UniRef100_A0A8B3MBM4",
+                "UniRef:UniRef50_A0A8B3MBM4",
+                "UniRef:UniRef90_A0A8B3MBM4"
+            ],
+            "seq_stats": {
+                "molecular_weight": 8710.7261,
+                "isoelectric_point": 4.947629737854004
+            }
+        },
+        {
+            "id": "MEGJMN_024",
+            "description": "hypothetical protein",
+            "aa": "MRRRPPQRSEDEKSITASAVIIPHTAKPRTNPLKTIQKLLCAVGVVTTRR",
+            "length": 50,
+            "type": "cds",
+            "locus": "MEGJMN_024",
+            "aa_hexdigest": "596d2a0f5af77a33e8eb0dc83e45d81b",
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [],
+            "seq_stats": {
+                "molecular_weight": 5622.5804,
+                "isoelectric_point": 11.630241584777831
+            }
+        },
+        {
+            "id": "MEGJMN_027",
+            "description": "hypothetical protein",
+            "aa": "MQESEVDKKSIKINFHRYSNEAINFLNSFEKVTYVSTLLVEDNILSAHQSNGYADWDKKFYYDGKYKDSLLIKLGLELTKIEGGDKKTVIWDDVLRNHPENEIDRQRRAHNIYHGVSFIYGLTDNISMAINVCTDSATTKREFEDLILPHRLKLLTMFQDM",
+            "length": 161,
+            "type": "cds",
+            "locus": "MEGJMN_027",
+            "aa_hexdigest": "a08c13806aec527a92928dfbd0ce23ff",
+            "ups": {
+                "uniparc_id": "UPI000329691F",
+                "ncbi_nrp_id": "WP_015632418.1",
+                "uniref100_id": "UniRef100_A0A6C0L1X5",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniParc:UPI000329691F",
+                    "RefSeq:WP_015632418.1",
+                    "UniRef:UniRef100_A0A6C0L1X5"
+                ]
+            },
+            "ips": {
+                "uniref100_id": "UniRef100_A0A6C0L1X5",
+                "uniref90_id": "UniRef90_A0A0C5H1S2"
+            },
+            "psc": {
+                "uniref90_id": "UniRef90_A0A0C5H1S2",
+                "uniref50_id": "UniRef50_J2UQ18"
+            },
+            "pscc": {
+                "uniref50_id": "UniRef50_J2UQ18",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniRef:UniRef50_J2UQ18"
+                ]
+            },
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "RefSeq:WP_015632418.1",
+                "SO:0001217",
+                "UniParc:UPI000329691F",
+                "UniRef:UniRef100_A0A6C0L1X5",
+                "UniRef:UniRef50_J2UQ18",
+                "UniRef:UniRef90_A0A0C5H1S2"
+            ],
+            "seq_stats": {
+                "molecular_weight": 18826.095800000003,
+                "isoelectric_point": 5.854382133483886
+            }
+        },
+        {
+            "id": "MEGJMN_030",
+            "description": "hypothetical protein",
+            "aa": "MSSSAEKKTNVIYIGSTRRRKIEKAAISLSVHAGKPISAAKITQEVLDMYLESYIKDFIENTPPDDD",
+            "length": 67,
+            "type": "cds",
+            "locus": "MEGJMN_030",
+            "aa_hexdigest": "5d28518b6ce946dfb2a0198e927dd8ee",
+            "ups": {
+                "uniparc_id": "UPI0003D8E070",
+                "ncbi_nrp_id": "WP_032495743.1",
+                "uniref100_id": "UniRef100_A0A6C0L2Y1",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniParc:UPI0003D8E070",
+                    "RefSeq:WP_032495743.1",
+                    "UniRef:UniRef100_A0A6C0L2Y1"
+                ]
+            },
+            "ips": {
+                "uniref100_id": "UniRef100_A0A6C0L2Y1",
+                "uniref90_id": "UniRef90_A0A6C0L2Y1"
+            },
+            "psc": {
+                "uniref90_id": "UniRef90_A0A6C0L2Y1",
+                "uniref50_id": "UniRef50_A0A6C0L2Y1"
+            },
+            "pscc": {
+                "uniref50_id": "UniRef50_A0A6C0L2Y1",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniRef:UniRef50_A0A6C0L2Y1"
+                ]
+            },
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "RefSeq:WP_032495743.1",
+                "SO:0001217",
+                "UniParc:UPI0003D8E070",
+                "UniRef:UniRef100_A0A6C0L2Y1",
+                "UniRef:UniRef50_A0A6C0L2Y1",
+                "UniRef:UniRef90_A0A6C0L2Y1"
+            ],
+            "seq_stats": {
+                "molecular_weight": 7472.420799999998,
+                "isoelectric_point": 6.561857032775879
+            }
+        },
+        {
+            "id": "MEGJMN_042",
+            "description": "hypothetical protein",
+            "aa": "MANENDASRDKKLLVGLIALVCAGAAGGGYLVWNHFFAPPPTPSRINVTNVTSAGKHQSTETEQYRQLLHEYNREGASAARADNSSFIASIPVGGGTPVHTVEAPRKRRSGNPHTRKNRRRRKRTRVSVSQIRQP",
+            "length": 135,
+            "type": "cds",
+            "locus": "MEGJMN_042",
+            "aa_hexdigest": "0b0b37a9ac3b849c5772c2b96c2888b9",
+            "ups": {
+                "uniparc_id": "UPI0009386B92",
+                "ncbi_nrp_id": "WP_104022059.1",
+                "uniref100_id": "UniRef100_UPI0009386B92",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniParc:UPI0009386B92",
+                    "RefSeq:WP_104022059.1",
+                    "UniRef:UniRef100_UPI0009386B92"
+                ]
+            },
+            "ips": {
+                "uniref100_id": "UniRef100_UPI0009386B92",
+                "uniref90_id": "UniRef90_UPI0009386B92"
+            },
+            "psc": {
+                "uniref90_id": "UniRef90_UPI0009386B92",
+                "uniref50_id": "UniRef50_UPI0009386B92"
+            },
+            "pscc": {
+                "uniref50_id": "UniRef50_UPI0009386B92",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniRef:UniRef50_UPI0009386B92"
+                ]
+            },
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "RefSeq:WP_104022059.1",
+                "SO:0001217",
+                "UniParc:UPI0009386B92",
+                "UniRef:UniRef100_UPI0009386B92",
+                "UniRef:UniRef50_UPI0009386B92",
+                "UniRef:UniRef90_UPI0009386B92"
+            ],
+            "seq_stats": {
+                "molecular_weight": 14824.500499999975,
+                "isoelectric_point": 11.26186923980713
+            }
+        },
+        {
+            "id": "MEGJMN_060",
+            "description": "hypothetical protein",
+            "aa": "MTLTNILVNAGVKVRLTDAYKIHHDKVIIIDRSTVETGSFNFRLAP",
+            "length": 46,
+            "type": "cds",
+            "locus": "MEGJMN_060",
+            "aa_hexdigest": "6940a97cc925bcc04615691882c14dc7",
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "PFAM:PF13091.12"
+            ],
+            "pfams": [
+                {
+                    "id": "PF13091.12",
+                    "name": "PLDc_2",
+                    "length": 37,
+                    "aa_cov": 0.782608695652174,
+                    "hmm_cov": 1.0,
+                    "evalue": 2.64619082381428e-10,
+                    "score": 30.427148818969727,
+                    "start": 7,
+                    "stop": 42
+                }
+            ],
+            "seq_stats": {
+                "molecular_weight": 5168.967699999999,
+                "isoelectric_point": 9.51922435760498
+            }
+        },
+        {
+            "id": "MEGJMN_067",
+            "description": "hypothetical protein",
+            "aa": "MSLSILQLAEDLAKGKRMRVPPMNGPEWRYFCFWLEYYMGYSM",
+            "length": 43,
+            "type": "cds",
+            "locus": "MEGJMN_067",
+            "aa_hexdigest": "f5e291ae2432e726a337843a613b534d",
+            "ups": {
+                "uniparc_id": "UPI00032DD3F2",
+                "uniref100_id": "UniRef100_A0A6C0L1U9",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniParc:UPI00032DD3F2",
+                    "UniRef:UniRef100_A0A6C0L1U9"
+                ]
+            },
+            "ips": {
+                "uniref100_id": "UniRef100_A0A6C0L1U9",
+                "uniref90_id": "UniRef90_A0A6C0L1U9"
+            },
+            "psc": {
+                "uniref90_id": "UniRef90_A0A6C0L1U9",
+                "uniref50_id": "UniRef50_A0A6C0L1U9"
+            },
+            "pscc": {
+                "uniref50_id": "UniRef50_A0A6C0L1U9",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniRef:UniRef50_A0A6C0L1U9"
+                ]
+            },
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "SO:0001217",
+                "UniParc:UPI00032DD3F2",
+                "UniRef:UniRef100_A0A6C0L1U9",
+                "UniRef:UniRef50_A0A6C0L1U9",
+                "UniRef:UniRef90_A0A6C0L1U9"
+            ],
+            "seq_stats": {
+                "molecular_weight": 5210.125099999999,
+                "isoelectric_point": 7.883790397644043
+            }
+        },
+        {
+            "id": "MEGJMN_069",
+            "description": "hypothetical protein",
+            "aa": "MELNDTAILPESDARKINAVASQAYPLGLLPNLKINFYSIDAIQLELRDNSGDLIWRDFTFSRDFIKGFMPYIRTRN",
+            "length": 77,
+            "type": "cds",
+            "locus": "MEGJMN_069",
+            "aa_hexdigest": "4d525afb59a000b44283e2e6819b3fb1",
+            "ups": {
+                "uniparc_id": "UPI00032E941B",
+                "ncbi_nrp_id": "WP_016162076.1",
+                "uniref100_id": "UniRef100_A0A6C0L3P9",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniParc:UPI00032E941B",
+                    "RefSeq:WP_016162076.1",
+                    "UniRef:UniRef100_A0A6C0L3P9"
+                ]
+            },
+            "ips": {
+                "uniref100_id": "UniRef100_A0A6C0L3P9",
+                "uniref90_id": "UniRef90_A0A7G3L5W7"
+            },
+            "psc": {
+                "uniref90_id": "UniRef90_A0A7G3L5W7",
+                "uniref50_id": "UniRef50_A0A486BC99"
+            },
+            "pscc": {
+                "uniref50_id": "UniRef50_A0A486BC99",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniRef:UniRef50_A0A486BC99"
+                ]
+            },
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "RefSeq:WP_016162076.1",
+                "SO:0001217",
+                "UniParc:UPI00032E941B",
+                "UniRef:UniRef100_A0A6C0L3P9",
+                "UniRef:UniRef50_A0A486BC99",
+                "UniRef:UniRef90_A0A7G3L5W7"
+            ],
+            "seq_stats": {
+                "molecular_weight": 8895.055199999992,
+                "isoelectric_point": 5.161571693420409
+            }
+        },
+        {
+            "id": "MEGJMN_070",
+            "description": "hypothetical protein",
+            "aa": "MTNSNKMTKDYRASVTIIVCPVRGNTAIHFCAIPSLQGSDCELWWPVVAGTSLHEAVEAIMVTNGIAINVTRVDKVRMQGRSTDYQVTYNRMQ",
+            "length": 93,
+            "type": "cds",
+            "locus": "MEGJMN_070",
+            "aa_hexdigest": "61575445e43804043a15ddeb2e75d83d",
+            "ups": {
+                "uniparc_id": "UPI000461A81E",
+                "ncbi_nrp_id": "WP_049078430.1",
+                "uniref100_id": "UniRef100_A0A6C0NDG0",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniParc:UPI000461A81E",
+                    "RefSeq:WP_049078430.1",
+                    "UniRef:UniRef100_A0A6C0NDG0"
+                ]
+            },
+            "ips": {
+                "uniref100_id": "UniRef100_A0A6C0NDG0",
+                "uniref90_id": "UniRef90_A0A6C0NDG0"
+            },
+            "psc": {
+                "uniref90_id": "UniRef90_A0A6C0NDG0",
+                "uniref50_id": "UniRef50_A0A6C0NDG0"
+            },
+            "pscc": {
+                "uniref50_id": "UniRef50_A0A6C0NDG0",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniRef:UniRef50_A0A6C0NDG0"
+                ]
+            },
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "RefSeq:WP_049078430.1",
+                "SO:0001217",
+                "UniParc:UPI000461A81E",
+                "UniRef:UniRef100_A0A6C0NDG0",
+                "UniRef:UniRef50_A0A6C0NDG0",
+                "UniRef:UniRef90_A0A6C0NDG0"
+            ],
+            "seq_stats": {
+                "molecular_weight": 10361.834199999994,
+                "isoelectric_point": 8.57095890045166
+            }
+        },
+        {
+            "id": "MEGJMN_071",
+            "description": "hypothetical protein",
+            "aa": "MPECAEYFNVSVPGNYFEGELSADATGIVLTLFTLNALIFLAWDKKWHNAQEELIKQSERLKGYASQHKEKVKIFAAID",
+            "length": 79,
+            "type": "cds",
+            "locus": "MEGJMN_071",
+            "aa_hexdigest": "6a19165aa92831bed81573626b7e2b5c",
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [],
+            "seq_stats": {
+                "molecular_weight": 8978.135599999992,
+                "isoelectric_point": 5.2808198928833
+            }
+        },
+        {
+            "id": "MEGJMN_074",
+            "description": "hypothetical protein",
+            "aa": "MASEKGIKNPQSDLCDKAEGIATYTDLVFLDAEQFRNCGDDLFVSNAERAQMAATGLIEFAKISGQHQHGTEPVRGIVISMLASTMHACHLLGVTEAEPFLSLVNIAAGHFEAEIRDEY",
+            "length": 119,
+            "type": "cds",
+            "locus": "MEGJMN_074",
+            "aa_hexdigest": "75014789078caadd33f27ee2155ee0a7",
+            "ups": {
+                "uniparc_id": "UPI00032E55A7",
+                "ncbi_nrp_id": "WP_016162075.1",
+                "uniref100_id": "UniRef100_A0A0C5HDG0",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniParc:UPI00032E55A7",
+                    "RefSeq:WP_016162075.1",
+                    "UniRef:UniRef100_A0A0C5HDG0"
+                ]
+            },
+            "ips": {
+                "uniref100_id": "UniRef100_A0A0C5HDG0",
+                "uniref90_id": "UniRef90_A0A0C5HDG0"
+            },
+            "psc": {
+                "uniref90_id": "UniRef90_A0A0C5HDG0",
+                "uniref50_id": "UniRef50_A0A0C5HDG0"
+            },
+            "pscc": {
+                "uniref50_id": "UniRef50_A0A0C5HDG0",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniRef:UniRef50_A0A0C5HDG0"
+                ]
+            },
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "RefSeq:WP_016162075.1",
+                "SO:0001217",
+                "UniParc:UPI00032E55A7",
+                "UniRef:UniRef100_A0A0C5HDG0",
+                "UniRef:UniRef50_A0A0C5HDG0",
+                "UniRef:UniRef90_A0A0C5HDG0"
+            ],
+            "seq_stats": {
+                "molecular_weight": 12926.43099999999,
+                "isoelectric_point": 4.705779838562011
+            }
+        },
+        {
+            "id": "MEGJMN_076",
+            "description": "hypothetical protein",
+            "aa": "MKFTDEEQQIIRRAEAIISAKLPGTDYLTSPDMVRSFLRLHFASADRELFWGAVSGQPEWCNCF",
+            "length": 64,
+            "type": "cds",
+            "locus": "MEGJMN_076",
+            "aa_hexdigest": "a406e967dbd420e7e08b28bfab865df2",
+            "ups": {
+                "uniparc_id": "UPI00071FBE6A",
+                "ncbi_nrp_id": "WP_227665541.1",
+                "uniref100_id": "UniRef100_A0A6C0L480",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniParc:UPI00071FBE6A",
+                    "RefSeq:WP_227665541.1",
+                    "UniRef:UniRef100_A0A6C0L480"
+                ]
+            },
+            "ips": {
+                "uniref100_id": "UniRef100_A0A6C0L480",
+                "uniref90_id": "UniRef90_A0A6C0L480"
+            },
+            "psc": {
+                "uniref90_id": "UniRef90_A0A6C0L480",
+                "uniref50_id": "UniRef50_A0A6C0L480"
+            },
+            "pscc": {
+                "uniref50_id": "UniRef50_A0A6C0L480",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniRef:UniRef50_A0A6C0L480"
+                ]
+            },
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "RefSeq:WP_227665541.1",
+                "SO:0001217",
+                "UniParc:UPI00071FBE6A",
+                "UniRef:UniRef100_A0A6C0L480",
+                "UniRef:UniRef50_A0A6C0L480",
+                "UniRef:UniRef90_A0A6C0L480"
+            ],
+            "seq_stats": {
+                "molecular_weight": 7381.322799999999,
+                "isoelectric_point": 5.1528753280639625
+            }
+        },
+        {
+            "id": "MEGJMN_078",
+            "description": "hypothetical protein",
+            "aa": "MNTNLLLTADDVHISMPAGAYLPVTCRFYSHIPHRRHAVRPVTERQRTGTSLFRLTQCCHRRPAVHRTYFMTETAPLYYDEGVNGSTKFTFEVYRDSAQYVVYVRRWNAKKNTILEETRYTSPDKAGLREIKYTNSRQAKAFFSSDFWSQSV",
+            "length": 152,
+            "type": "cds",
+            "locus": "MEGJMN_078",
+            "aa_hexdigest": "a74f9c4cb7da596ad5f61ecfd89a50c7",
+            "ups": {
+                "uniparc_id": "UPI0003296929",
+                "ncbi_nrp_id": "WP_015632455.1",
+                "uniref100_id": "UniRef100_A0A0C5H2X1",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniParc:UPI0003296929",
+                    "RefSeq:WP_015632455.1",
+                    "UniRef:UniRef100_A0A0C5H2X1"
+                ]
+            },
+            "ips": {
+                "uniref100_id": "UniRef100_A0A0C5H2X1",
+                "uniref90_id": "UniRef90_A0A0C5H2X1"
+            },
+            "psc": {
+                "uniref90_id": "UniRef90_A0A0C5H2X1",
+                "uniref50_id": "UniRef50_A0A0C5H2X1"
+            },
+            "pscc": {
+                "uniref50_id": "UniRef50_A0A0C5H2X1",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniRef:UniRef50_A0A0C5H2X1"
+                ]
+            },
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "RefSeq:WP_015632455.1",
+                "SO:0001217",
+                "UniParc:UPI0003296929",
+                "UniRef:UniRef100_A0A0C5H2X1",
+                "UniRef:UniRef50_A0A0C5H2X1",
+                "UniRef:UniRef90_A0A0C5H2X1"
+            ],
+            "seq_stats": {
+                "molecular_weight": 17796.921299999987,
+                "isoelectric_point": 9.708632469177246
+            }
+        },
+        {
+            "id": "MEGJMN_082",
+            "description": "hypothetical protein",
+            "aa": "MSDGQSLKVTASLLVFHPQRKEDRSAESLVGFLHLYAGRYNVLPDPYINLSRLSSQSWSVNCDLSIFPSNGSVWKVLWR",
+            "length": 79,
+            "type": "cds",
+            "locus": "MEGJMN_082",
+            "aa_hexdigest": "fe5228e1eae3c14387cd99a56d6ffbd2",
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [],
+            "seq_stats": {
+                "molecular_weight": 8969.098799999998,
+                "isoelectric_point": 8.977754402160645
+            }
+        },
+        {
+            "id": "MEGJMN_083",
+            "description": "hypothetical protein",
+            "aa": "MLLIRTSKSSLSINFSFSRCYTLVPGVGVWAVFAGTDTGHILCIAIAGERAAHLIDNPRFMVRGFPAAVSGRSLKRRLDGRCQFFWCSDVGKHERLLACIVFVNIFPRSSCVAQVSRPLDDLPATFELTVARLLAIRTR",
+            "length": 139,
+            "type": "cds",
+            "locus": "MEGJMN_083",
+            "aa_hexdigest": "02a05f107d59ca079b50577a2de1896d",
+            "ups": {
+                "uniparc_id": "UPI00032968EC",
+                "uniref100_id": "UniRef100_A0A0C5H2X4",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniParc:UPI00032968EC",
+                    "UniRef:UniRef100_A0A0C5H2X4"
+                ]
+            },
+            "ips": {
+                "uniref100_id": "UniRef100_A0A0C5H2X4",
+                "uniref90_id": "UniRef90_A0A0C5H2X4"
+            },
+            "psc": {
+                "uniref90_id": "UniRef90_A0A0C5H2X4",
+                "uniref50_id": "UniRef50_A0A0C5H2X4"
+            },
+            "pscc": {
+                "uniref50_id": "UniRef50_A0A0C5H2X4",
+                "db_xrefs": [
+                    "SO:0001217",
+                    "UniRef:UniRef50_A0A0C5H2X4"
+                ]
+            },
+            "hypothetical": true,
+            "gene": null,
+            "genes": [],
+            "product": "hypothetical protein",
+            "db_xrefs": [
+                "SO:0001217",
+                "UniParc:UPI00032968EC",
+                "UniRef:UniRef100_A0A0C5H2X4",
+                "UniRef:UniRef50_A0A0C5H2X4",
+                "UniRef:UniRef90_A0A0C5H2X4"
+            ],
+            "seq_stats": {
+                "molecular_weight": 15399.923499999988,
+                "isoelectric_point": 10.107369422912598
+            }
+        }
+    ],
+    "version": {
+        "bakta": "1.11.4",
+        "db": {
+            "version": "6.0",
+            "type": "full"
+        }
+    }
+}

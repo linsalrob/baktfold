@@ -241,3 +241,7 @@ BAKTA_URL = 'github.com/oschwengers/bakta'
 BAKTA_CITATION = f'''Schwengers O., Jelonek L., Dieckmann M. A., Beyvers S., Blom J., Goesmann A. (2021).
 Bakta: rapid and standardized annotation of bacterial genomes via alignment-free sequence identification.
 Microbial Genomics, 7(11). https://doi.org/{BAKTA_DOI}'''
+
+BAKTFOLD_DOI = 'https://github.com/gbouras13/baktfold'
+BAKTFOLD_URL = 'https://github.com/gbouras13/baktfold'
+BAKTFOLD_CITATION = f'''Bouras G., Baktfold: citation coming {BAKTFOLD_URL}'''

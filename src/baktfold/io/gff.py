@@ -30,8 +30,8 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
         fh.write(f'# Software: v{cfg.version}\n')
         fh.write(f"# Database: v{cfg.version}\n") # fix later
         #fh.write(f"# Database: v{cfg.db_info['major']}.{cfg.db_info['minor']}, {cfg.db_info['type']}\n")
-        fh.write(f'# DOI: {bc.BAKTA_DOI}\n')
-        fh.write(f'# URL: {bc.BAKTA_URL}\n')
+        fh.write(f'# DOI: {bc.BAKTFOLD_DOI}\n')
+        fh.write(f'# URL: {bc.BAKTFOLD_URL}\n')
 
         for seq in data['sequences']:  # write features
             fh.write(f"##sequence-region {seq['id']} 1 {seq['length']}\n")  # sequence region

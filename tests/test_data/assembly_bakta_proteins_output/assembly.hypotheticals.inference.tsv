@@ -1,0 +1,23 @@
+# Annotated with Bakta
+# Software: v1.11.4
+# Database: v6.0, full
+# DOI: 10.1099/mgen.0.000685
+# URL: github.com/oschwengers/bakta
+#Sequence Id	Type	Start	Stop	Strand	Locus Tag	Score	Evalue	Query Cov	Subject Cov	Id	Accession
+-	cds	-1	-1	?	MEGJMN_003	-	-	-	-	-	-
+-	cds	-1	-1	?	MEGJMN_005	-	0.0	1.0	1.0	1.0	UniRef:UniRef100_A0A6C0NCX4
+-	cds	-1	-1	?	MEGJMN_010	-	0.0	1.0	1.0	1.0	UniRef:UniRef100_A0A8B3MBM4
+-	cds	-1	-1	?	MEGJMN_024	-	-	-	-	-	-
+-	cds	-1	-1	?	MEGJMN_027	-	0.0	1.0	1.0	1.0	UniRef:UniRef100_A0A6C0L1X5
+-	cds	-1	-1	?	MEGJMN_030	-	0.0	1.0	1.0	1.0	UniRef:UniRef100_A0A6C0L2Y1
+-	cds	-1	-1	?	MEGJMN_042	-	0.0	1.0	1.0	1.0	UniRef:UniRef100_UPI0009386B92
+-	cds	-1	-1	?	MEGJMN_060	-	-	-	-	-	-
+-	cds	-1	-1	?	MEGJMN_067	-	0.0	1.0	1.0	1.0	UniRef:UniRef100_A0A6C0L1U9
+-	cds	-1	-1	?	MEGJMN_069	-	0.0	1.0	1.0	1.0	UniRef:UniRef100_A0A6C0L3P9
+-	cds	-1	-1	?	MEGJMN_070	-	0.0	1.0	1.0	1.0	UniRef:UniRef100_A0A6C0NDG0
+-	cds	-1	-1	?	MEGJMN_071	-	-	-	-	-	-
+-	cds	-1	-1	?	MEGJMN_074	-	0.0	1.0	1.0	1.0	UniRef:UniRef100_A0A0C5HDG0
+-	cds	-1	-1	?	MEGJMN_076	-	0.0	1.0	1.0	1.0	UniRef:UniRef100_A0A6C0L480
+-	cds	-1	-1	?	MEGJMN_078	-	0.0	1.0	1.0	1.0	UniRef:UniRef100_A0A0C5H2X1
+-	cds	-1	-1	?	MEGJMN_082	-	-	-	-	-	-
+-	cds	-1	-1	?	MEGJMN_083	-	0.0	1.0	1.0	1.0	UniRef:UniRef100_A0A0C5H2X4

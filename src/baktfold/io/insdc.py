@@ -28,8 +28,8 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
             f"Software: v{cfg.version}\n",
             f"Database: v{cfg.version}\n", # fix later
             #f"Database: v{cfg.db_info['major']}.{cfg.db_info['minor']}, {cfg.db_info['type']}\n",
-            f'DOI: {bc.BAKTA_DOI}\n',
-            f'URL: {bc.BAKTA_URL}\n',
+            f'DOI: {bc.BAKTFOLD_DOI}\n',
+            f'URL: {bc.BAKTFOLD_URL}\n',
             '\n',
             '##Genome Annotation Summary:##\n',
             #f"{'Annotation Date':<30} :: {cfg.run_end.strftime('%m/%d/%Y, %H:%M:%S')}\n",
