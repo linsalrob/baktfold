@@ -38,6 +38,11 @@ test_bakta_output = Path("tests/test_data/assembly_bakta_output")
 test_bakta_proteins_output = Path("tests/test_data/assembly_bakta_proteins_output")
 database_dir = Path(f"{test_data}/baktfold_db")
 
+# inputs
+input_json: Path = f"{test_bakta_output}/assembly.json"
+input_fasta: Path = f"{test_data}/assembly.hypotheticals.faa"
+
+
 pdb_dir = Path(f"{test_data}/pdbs")
 cif_dir = Path(f"{test_data}/cifs")
 
@@ -78,11 +83,7 @@ def remove_directory(dir_path):
 
 @pytest.fixture(scope="session")
 def gpu_available(pytestconfig):
-    return pytestconfig.getoption("gpu_available")
-
-@pytest.fixture(scope="session")
-def run_remote(pytestconfig):
-    return pytestconfig.getoption("run_remote")
+    return pytestconfig.getoption("gpu-available")
 
 @pytest.fixture(scope="session")
 def nvidia(pytestconfig):
@@ -126,7 +127,6 @@ run tests
 
 def test_run(gpu_available, threads, nvidia):
     """test baktfold run"""
-    input_json: Path = f"{test_bakta_output}/assembly.json"
     cmd = f"baktfold run -i {input_json} -o {run_dir} -t {threads} -d {database_dir} -f"
     if nvidia:
        cmd = f"{cmd} --foldseek-gpu" 
@@ -137,7 +137,6 @@ def test_run(gpu_available, threads, nvidia):
 
 def test_run_all(gpu_available, threads, nvidia):
     """test baktfold run on all proteins not just hyps with -a"""
-    input_json: Path = f"{test_bakta_output}/assembly.json"
     cmd = f"baktfold run -i {input_json} -o {run_all_dir} -t {threads} -d {database_dir} -f -a"
     if nvidia:
        cmd = f"{cmd} --foldseek-gpu" 
@@ -147,7 +146,6 @@ def test_run_all(gpu_available, threads, nvidia):
 
 def test_run_extra_foldseek_params(gpu_available, threads, nvidia):
     """test baktfold run on all proteins not just hyps with -a"""
-    input_json: Path = f"{test_bakta_output}/assembly.json"
     cmd = f"baktfold run -i {input_json} -o {run_dir_extra} -t {threads} -d {database_dir} -f --extra_foldseek_params \"--cov-mode 2\""
     if nvidia:
        cmd = f"{cmd} --foldseek-gpu" 
@@ -158,7 +156,6 @@ def test_run_extra_foldseek_params(gpu_available, threads, nvidia):
 
 def test_run_custom_db(gpu_available, threads, nvidia):
     """test baktfold run with custom db"""
-    input_json: Path = f"{test_bakta_output}/assembly.json"
     cmd = f"baktfold run -i {input_json} -o {run_dir_custom_db} -t {threads} -d {database_dir} --custom-db {dummy_custom_db} -f "
     if nvidia:
        cmd = f"{cmd} --foldseek-gpu" 
@@ -168,7 +165,6 @@ def test_run_custom_db(gpu_available, threads, nvidia):
 
 def test_run_custom_db_custom_annotations(gpu_available, threads, nvidia):
     """test baktfold run with custom db and custom db annotation tsv"""
-    input_json: Path = f"{test_bakta_output}/assembly.json"
     cmd = f"baktfold run -i {input_json} -o {run_dir_custom_db_custom_annotations} -t {threads} -d {database_dir} --custom-db {dummy_custom_db} --custom-annotations {dummy_custom_db_annotations} -f "
     if nvidia:
        cmd = f"{cmd} --foldseek-gpu" 
@@ -182,7 +178,6 @@ predict tests
 
 def test_predict(gpu_available, threads, nvidia):
     """test baktfold predict"""
-    input_json: Path = f"{test_bakta_output}/assembly.json"
     cmd = f"baktfold predict -i {input_json} -o {predict_dir} -t {threads}  -d {database_dir} -f "
     if gpu_available is False:
         cmd = f"{cmd} --cpu"
@@ -191,7 +186,6 @@ def test_predict(gpu_available, threads, nvidia):
 
 def test_predict_save_embeddings(gpu_available, threads, nvidia):
     """test baktfold predict and save embeddings"""
-    input_json: Path = f"{test_bakta_output}/assembly.json"
     cmd = f"baktfold predict -i {input_json} -o {predict_embeddings_dir} -t {threads}  -d {database_dir} -f --save_per_residue_embeddings --save_per_protein_embeddings"
     if gpu_available is False:
         cmd = f"{cmd} --cpu"
@@ -205,8 +199,7 @@ compare tests
 
 def test_compare(gpu_available, threads, nvidia):
     """test baktfold compare """
-    input_gbk: Path = f"{test_data}/assembly.json"
-    cmd = f"baktfold compare -i {input_gbk} -o {compare_dir} --predictions_dir {predict_dir} -t {threads} -d {database_dir} -f"
+    cmd = f"baktfold compare -i {input_json} -o {compare_dir} --predictions_dir {predict_dir} -t {threads} -d {database_dir} -f"
     if nvidia:
         cmd = f"{cmd} --foldseek-gpu" 
     exec_command(cmd)
@@ -214,16 +207,14 @@ def test_compare(gpu_available, threads, nvidia):
 
 def test_compare_pdb(gpu_available, threads, nvidia):
     """test baktfold compare with pdbs input"""
-    input_gbk: Path = f"{test_data}/assembly.json"
-    cmd = f"baktfold compare -i {input_gbk} -o {compare_pdb_dir} -t {threads} -d {database_dir} --structure-dir {pdb_dir} -f"
+    cmd = f"baktfold compare -i {input_json} -o {compare_pdb_dir} -t {threads} -d {database_dir} --structure-dir {pdb_dir} -f"
     if nvidia:
         cmd = f"{cmd} --foldseek-gpu" 
     exec_command(cmd)
 
 def test_compare_cif(gpu_available, threads, nvidia):
     """test baktfold compare with cifs input"""
-    input_gbk: Path = f"{test_data}/assembly.json"
-    cmd = f"baktfold compare -i {input_gbk} -o {compare_cif_dir} -t {threads} -d {database_dir} --structure-dir {cif_dir} -f"
+    cmd = f"baktfold compare -i {input_json} -o {compare_cif_dir} -t {threads} -d {database_dir} --structure-dir {cif_dir} -f"
     if nvidia:
         cmd = f"{cmd} --foldseek-gpu" 
     exec_command(cmd)
@@ -235,7 +226,6 @@ proteins
 
 def test_proteins(gpu_available, threads, nvidia):
     """test baktfold proteins"""
-    input_fasta: Path = f"{test_data}/assembly.hypotheticals.faa"
     cmd = f"baktfold proteins -i {input_fasta} -o {proteins_dir} -t {threads} -d {database_dir} -f"
     if nvidia:
        cmd = f"{cmd} --foldseek-gpu" 
@@ -250,7 +240,6 @@ proteins-predict
 
 def test_proteins_predict(gpu_available, threads, nvidia):
     """test baktfold proteins-predict"""
-    input_fasta: Path = f"{test_data}/assembly.hypotheticals.faa"
     cmd = f"baktfold proteins-predict -i {input_fasta} -o {proteins_predict_dir} -t {threads} -d {database_dir} -f"
     if gpu_available is False:
         cmd = f"{cmd} --cpu"
@@ -263,7 +252,6 @@ proteins-compare
 
 def test_proteins_compare(gpu_available, threads, nvidia):
     """test baktfold proteins-compare"""
-    input_fasta: Path = f"{test_data}/assembly.hypotheticals.faa"
     cmd = f"baktfold proteins-compare -i {input_fasta}  -o {proteins_compare_dir} --predictions_dir {proteins_predict_dir} -t {threads} -d {database_dir} -f"
     if nvidia:
        cmd = f"{cmd} --foldseek-gpu" 
@@ -271,7 +259,6 @@ def test_proteins_compare(gpu_available, threads, nvidia):
 
 def test_proteins_compare_pdb(gpu_available, threads, nvidia):
     """test baktfold proteins-compare with pdbs input"""
-    input_fasta: Path = f"{test_data}/assembly.hypotheticals.faa"
     cmd = f"baktfold proteins-compare -i {input_fasta} -o {proteins_compare_pdb_dir} -t {threads} -d {database_dir} --structure-dir {pdb_dir} -f"
     if nvidia:
         cmd = f"{cmd} --foldseek-gpu" 
@@ -279,7 +266,6 @@ def test_proteins_compare_pdb(gpu_available, threads, nvidia):
 
 def test_proteins_compare_cif(gpu_available, threads, nvidia):
     """test baktfold proteins-compare with cifs input"""
-    input_fasta: Path = f"{test_data}/assembly.hypotheticals.faa"
     cmd = f"baktfold proteins-compare -i {input_fasta} -o {proteins_compare_cif_dir} -t {threads} -d {database_dir} --structure-dir {cif_dir} -f"
     if nvidia:
         cmd = f"{cmd} --foldseek-gpu" 
