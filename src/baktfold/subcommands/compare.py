@@ -110,7 +110,7 @@ def subcommand_compare(
 
         with open(fasta_aa, "w+") as out_f:
             for entry in hypotheticals:
-                header = f">{entry['id']}\n"
+                header = f">{entry['locus']}\n"
                 seq = f"{entry['aa']}\n"
                 out_f.write(header)
                 out_f.write(seq)

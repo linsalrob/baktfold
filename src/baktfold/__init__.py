@@ -943,16 +943,16 @@ def compare(
 
 
 
-    # code to read in and append 3Di from ProstT5 in the dictionary for the json output
+    # code to read in and append 3Di from ProstT5 to the dictionary for the json output
 
     if not structures:
-        threedi_aa : Path = Path(output) / f"{prefix}_3di.fasta"
+        threedi_aa = Path(predictions_dir) / f"{prefix}_3di.fasta"
         predictions = {record.id: str(record.seq) for record in SeqIO.parse(threedi_aa, "fasta")}
+        
         for feat in hypotheticals:
+            seq_id = feat["locus"]
             threedi_seq = predictions.get(seq_id)
-            feat["3di"] = threedi_seq
-
-
+            feat["3di"] = threedi_seq if threedi_seq else ""
 
     hypotheticals = subcommand_compare(
         hypotheticals,

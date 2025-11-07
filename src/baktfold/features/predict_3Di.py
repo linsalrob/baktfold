@@ -186,16 +186,8 @@ def write_embeddings(
     """
 
     with h5py.File(str(out_path), "w") as hf:
-        for contig_id, rest in embeddings.items():
-            embeddings_contig_dict = embeddings[contig_id]
-
-            for sequence_id, embedding in embeddings_contig_dict.items():
-                # if proteins, don't make another dict
-                if contig_id == "proteins":
-                    embeddings_name = sequence_id
-                else:
-                    embeddings_name = f"{contig_id}:{sequence_id}"
-                hf.create_dataset(embeddings_name, data=embedding)
+        for sequence_id, embedding in embeddings.items():
+            hf.create_dataset(sequence_id, data=embedding)
 
 
 def write_predictions(

@@ -252,7 +252,7 @@ proteins-compare
 
 def test_proteins_compare(gpu_available, threads, nvidia):
     """test baktfold proteins-compare"""
-    cmd = f"baktfold proteins-compare -i {input_fasta}  -o {proteins_compare_dir} --predictions_dir {proteins_predict_dir} -t {threads} -d {database_dir} -f"
+    cmd = f"baktfold proteins-compare -i {input_fasta}  -o {proteins_compare_dir} --predictions-dir {proteins_predict_dir} -t {threads} -d {database_dir} -f"
     if nvidia:
        cmd = f"{cmd} --foldseek-gpu" 
     exec_command(cmd)
