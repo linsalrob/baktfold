@@ -6,13 +6,13 @@ pytest .
 
 
 # to run with gpu
-pytest  --gpu_available .
+pytest  --gpu-available .
 
 # to run with NVIDIA gpu available
-pytest  --gpu_available --nvidia .
+pytest  --gpu-available --nvidia .
 
 # to run with 8 threads 
-pytest --gpu_available --nvidia --threads 8 .
+pytest --gpu-available --nvidia --threads 8 .
 
 """
 
@@ -83,7 +83,7 @@ def remove_directory(dir_path):
 
 @pytest.fixture(scope="session")
 def gpu_available(pytestconfig):
-    return pytestconfig.getoption("gpu-available")
+    return pytestconfig.getoption("gpu_available")
 
 @pytest.fixture(scope="session")
 def nvidia(pytestconfig):
@@ -114,7 +114,7 @@ def exec_command(cmnd, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
 install tests
 """
 
-def test_install(threads):
+def test_install(threads, nvidia):
     """test baktfold install"""
     cmd = f"baktfold install -d {database_dir} -t {threads}"
     if nvidia:
@@ -281,4 +281,4 @@ def test_proteins_compare_cif(gpu_available, threads, nvidia):
 
 
 remove_directory(output_dir)
-remove_directory(database_dir)
+# remove_directory(database_dir)
