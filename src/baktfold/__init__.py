@@ -469,7 +469,7 @@ def run(
 
     # cleanup the temp files
     if not keep_tmp_files:
-        clean_up_temporary_files(output)
+        clean_up_temporary_files(output, prefix)
 
    
     # end baktfold
@@ -657,7 +657,7 @@ def proteins(
 
     # cleanup the temp files
     if not keep_tmp_files:
-        clean_up_temporary_files(output)
+        clean_up_temporary_files(output, prefix)
 
     # end baktfold
     end_baktfold(start_time, "proteins")
@@ -905,13 +905,13 @@ def compare(
     if (structure_dir):
         structures = True
         if predictions_dir:
-            logger.warning(f"Both --predictions_dir {predictions_dir} and --structure_dir {structure_dir} detected")
-            logger.warning(f"Proceeding with --predictions_dir {predictions_dir}")
+            logger.warning(f"Both --predictions-dir {predictions_dir} and --structure-dir {structure_dir} detected")
+            logger.warning(f"Proceeding with --predictions-dir {predictions_dir}")
             structures = False
     else:
         structures = False
         if not predictions_dir:
-            logger.error(f"neither --predictions_dir or --structure_dir was specified. Please specify one.")
+            logger.error(f"neither --predictions_dir or --structure-dir was specified. Please specify one.")
 
 
     ###
@@ -943,16 +943,16 @@ def compare(
 
 
 
-    # code to read in and append 3Di from ProstT5 in the dictionary for the json output
+    # code to read in and append 3Di from ProstT5 to the dictionary for the json output
 
     if not structures:
-        threedi_aa : Path = Path(output) / f"{prefix}_3di.fasta"
+        threedi_aa = Path(predictions_dir) / f"{prefix}_3di.fasta"
         predictions = {record.id: str(record.seq) for record in SeqIO.parse(threedi_aa, "fasta")}
+        
         for feat in hypotheticals:
+            seq_id = feat["locus"]
             threedi_seq = predictions.get(seq_id)
-            feat["3di"] = threedi_seq
-
-
+            feat["3di"] = threedi_seq if threedi_seq else ""
 
     hypotheticals = subcommand_compare(
         hypotheticals,
@@ -1025,7 +1025,7 @@ def compare(
 
     # cleanup the temp files
     if not keep_tmp_files:
-        clean_up_temporary_files(output)
+        clean_up_temporary_files(output, prefix)
 
     # end baktfold
     end_baktfold(start_time, "compare")
@@ -1161,12 +1161,12 @@ Runs Foldseek vs baktfold DBs for multiFASTA 3Di sequences (predicted with prote
     required=True,
 )
 @click.option(
-    "--predictions_dir",
+    "--predictions-dir",
     help="Path to output directory from baktfold proteins-predict",
     type=click.Path(),
 )
 @click.option(
-    "--structure_dir",
+    "--structure-dir",
     help="Path to directory with .pdb or .cif file structures. The CDS IDs need to be in the name of the file",
     type=click.Path(),
 )
@@ -1233,13 +1233,13 @@ def proteins_compare(
     if (structure_dir):
         structures = True
         if predictions_dir:
-            logger.warning(f"Both --predictions_dir {predictions_dir} and --structure_dir {structure_dir} detected")
-            logger.warning(f"Proceeding with --predictions_dir {predictions_dir}")
+            logger.warning(f"Both --predictions-dir {predictions_dir} and --structure-dir {structure_dir} detected")
+            logger.warning(f"Proceeding with --predictions-dir {predictions_dir}")
             structures = False
     else:
         structures = False
         if not predictions_dir:
-            logger.error(f"neither --predictions_dir or --structure_dir was specified. Please specify one.")
+            logger.error(f"neither --predictions-dir or --structure-dir was specified. Please specify one.")
 
     # check if predictions_dir and structures
 
@@ -1271,8 +1271,8 @@ def proteins_compare(
         database,
         prefix,
         predictions_dir,
-        structures,
-        structure_dir=None,
+        structures=structures,
+        structure_dir=structure_dir,
         logdir=logdir,
         proteins_flag=True,
         max_seqs=max_seqs,
@@ -1316,7 +1316,7 @@ def proteins_compare(
 
     # cleanup the temp files
     if not keep_tmp_files:
-        clean_up_temporary_files(output)
+        clean_up_temporary_files(output, prefix)
 
     # end baktfold
     end_baktfold(start_time, "protein-compare")

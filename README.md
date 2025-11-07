@@ -9,6 +9,19 @@ Additionally, instead of using ProstT5, you can specify protein structures that 
 
 You can also specify custom databases to search against using `--custom-db`
 
+**Baktfold is currently under active development. We would welcome any and all feedback (especially bugs) via Issues**
+
+# Table of Contents
+
+- [baktfold](#baktfold)
+- [Table of Contents](#table-of-contents)
+  - [Install](#install)
+  - [Example](#example)
+  - [Usage](#usage)
+  - [Output](#output)
+    - [Conceptual terms](#conceptual-terms)
+  - [Citations](#citations)
+
 ## Install
 
 * We will be making baktfold available via pypi and bioconda shortly
@@ -143,7 +156,44 @@ Options:
   --custom-annotations PATH      Custom Foldseek DB annotations, 2 column tsv.
                                  Column 1 matches the Foldseek headers, column
                                  2 is the description.
+  -a, --all-proteins             annotate all proteins (not just
+                                 hypotheticals)
 ```
+
+
+## Output
+
+* The majority out outputs match [bakta](https://github.com/oschwengers/bakta?tab=readme-ov-file#input-and-output).
+* Specifically, all the format compliant outputs match bakta's.
+* The differences are:
+    * `<prefix>.inference.tsv` is changed compared to bakta. In `baktfold`, this file gives a quick overview of the different `baktfold` databases the query protein has hit (if any)
+    * For example:
+
+```bash
+ID	Length	Product	Swissprot	AFDBClusters	PDB	CATH
+MEGJMNBEGN_27	162	HTH-type quorum-sensing regulator RhlR	swissprot_P54292	afdbclusters_A0A9E1VSB0	pdb_5l09	cath_3sztB01
+MEGJMNBEGN_30	68	hypothetical protein				
+MEGJMNBEGN_70	94	hypothetical protein		afdbclusters_A0A1I3V7E0		
+```
+
+    * `<prefix>_<database>_tophit.tsv` files give the detailed Foldseek alignment information for each tophit found for each database.
+    * For example:
+
+```bash
+query	target	bitscore	fident	evalue	qStart	qEnd	qLen	qCov	tStart	tEnd	tLen	tCov
+MEGJMN_070	AF-A0A1I3V7E0-F1-model_v6	292	0.41	2.619e-06	1	91	93	0.97	1	95	99	0.95
+```
+
+    * The full Foldseek search outputs are not kept by default (only tophits) - you can keep the full Foldseek search tsvs using `--keep-tmp-files`. They will be called `foldseek_results_<database>.tsv`
+    * `baktfold_3di.fasta` which gives the 3Di tokens for each input CDS
+    * `baktfold_prostT5_3di_mean_probabilities.csv` and `baktfold_prostT5_3di_all_probabilities.json`, which give some score of the confidence ProstT5 has in its predictions. You can disable this output with `--omit-probs`
+    * Baktfold does not have plotting functionality like Bakta (yet)
+
+### Conceptual terms
+
+* As Baktfold inherits annotations from Bakta, please see the explanation in bakta for all other concepts [here](https://github.com/oschwengers/bakta?tab=readme-ov-file#annotation-workflow)
+* Baktfold adds one conceptual term in addition to Bakta's:
+    * PSTC: protein structure clusters. These comprise of structure-based annotations to any of Baktfold's databases
 
 ## Citations
 

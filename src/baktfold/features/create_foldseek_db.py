@@ -163,6 +163,7 @@ def generate_foldseek_db_from_structures(
         sequences_aa[record.id] = str(record.seq)
 
     # lists all the pdb files
+
     structure_files = [
         file
         for file in os.listdir(structure_dir)
@@ -178,11 +179,6 @@ def generate_foldseek_db_from_structures(
     no_structure_cds_ids = []
 
     for cds_id in sequences_aa.keys():
-
-        # record_id = id.split(":")[0]
-        # this is potentially an issue if a contig has > 9999 AAs
-        # need to fix with Pharokka possibly. Unlikely to occur but might!
-        # enforce names as  "{cds_id}.pdb" or "{cds_id}.cif" (AF3)
 
         matching_files = [
             file
