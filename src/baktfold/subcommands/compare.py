@@ -104,10 +104,16 @@ def subcommand_compare(
                 )
 
     ## write the AAs to file if structures is true because can't just copy from prediction_dir
-
     else:
-        print('deal with this later should be trivial')
+        ## write the CDS to file
+        logger.info(f"Writing the AAs to file {fasta_aa}.")
 
+        with open(fasta_aa, "w+") as out_f:
+            for entry in hypotheticals:
+                header = f">{entry['id']}\n"
+                seq = f"{entry['aa']}\n"
+                out_f.write(header)
+                out_f.write(seq)
 
 
     ############

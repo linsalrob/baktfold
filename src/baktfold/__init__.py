@@ -905,13 +905,13 @@ def compare(
     if (structure_dir):
         structures = True
         if predictions_dir:
-            logger.warning(f"Both --predictions_dir {predictions_dir} and --structure_dir {structure_dir} detected")
-            logger.warning(f"Proceeding with --predictions_dir {predictions_dir}")
+            logger.warning(f"Both --predictions-dir {predictions_dir} and --structure-dir {structure_dir} detected")
+            logger.warning(f"Proceeding with --predictions-dir {predictions_dir}")
             structures = False
     else:
         structures = False
         if not predictions_dir:
-            logger.error(f"neither --predictions_dir or --structure_dir was specified. Please specify one.")
+            logger.error(f"neither --predictions_dir or --structure-dir was specified. Please specify one.")
 
 
     ###
@@ -1161,12 +1161,12 @@ Runs Foldseek vs baktfold DBs for multiFASTA 3Di sequences (predicted with prote
     required=True,
 )
 @click.option(
-    "--predictions_dir",
+    "--predictions-dir",
     help="Path to output directory from baktfold proteins-predict",
     type=click.Path(),
 )
 @click.option(
-    "--structure_dir",
+    "--structure-dir",
     help="Path to directory with .pdb or .cif file structures. The CDS IDs need to be in the name of the file",
     type=click.Path(),
 )
@@ -1233,13 +1233,13 @@ def proteins_compare(
     if (structure_dir):
         structures = True
         if predictions_dir:
-            logger.warning(f"Both --predictions_dir {predictions_dir} and --structure_dir {structure_dir} detected")
-            logger.warning(f"Proceeding with --predictions_dir {predictions_dir}")
+            logger.warning(f"Both --predictions-dir {predictions_dir} and --structure-dir {structure_dir} detected")
+            logger.warning(f"Proceeding with --predictions-dir {predictions_dir}")
             structures = False
     else:
         structures = False
         if not predictions_dir:
-            logger.error(f"neither --predictions_dir or --structure_dir was specified. Please specify one.")
+            logger.error(f"neither --predictions-dir or --structure-dir was specified. Please specify one.")
 
     # check if predictions_dir and structures
 
@@ -1271,8 +1271,8 @@ def proteins_compare(
         database,
         prefix,
         predictions_dir,
-        structures,
-        structure_dir=None,
+        structures=structures,
+        structure_dir=structure_dir,
         logdir=logdir,
         proteins_flag=True,
         max_seqs=max_seqs,
