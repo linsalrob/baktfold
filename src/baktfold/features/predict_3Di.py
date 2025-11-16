@@ -137,7 +137,7 @@ def get_T5_model(
     download = False
 
     download = check_prostT5_download(model_dir, model_name)
-    if download is True:
+    if download:
         localfile = False
         logger.info("ProstT5 not found. Downloading ProstT5 from Hugging Face")
     try:
