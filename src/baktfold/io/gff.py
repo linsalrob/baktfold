@@ -15,7 +15,7 @@ from loguru import logger
 # log = logging.getLogger('GFF')
 
 
-def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path: Path):
+def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path: Path, prokka: bool = False):
     """Export features in GFF3 format."""
     logger.info(f'write features: path={gff3_path}')
 
@@ -44,7 +44,7 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
             if(seq['topology'] == bc.TOPOLOGY_CIRCULAR):
                 annotations['Is_circular'] = 'true'
             annotations = encode_annotations(annotations)
-            fh.write(f"{seq['id']}\tBakta\tregion\t1\t{str(seq['length'])}\t.\t+\t.\t{annotations}\n")
+            fh.write(f"{seq['id']}\tBaktfold\tregion\t1\t{str(seq['length'])}\t.\t+\t.\t{annotations}\n")
 
             for feat in features_by_sequence[seq['id']]:
                 seq_id = feat['sequence'] if 'sequence' in feat else feat['contig']  # <1.10.0 compatibility
@@ -54,6 +54,10 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                     stop += seq['length']
 
                 if(feat['type'] == bc.FEATURE_T_RNA):
+
+                    trna_tool = "tRNAscan-SE"
+                    if prokka:
+                        trna_tool = "Aragorn"
                     annotations = {
                         'ID': feat['locus'],
                         'Name': feat['product'],
@@ -85,10 +89,11 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                         if(bc.PSEUDOGENE in feat):
                             gene_annotations[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNKNOWN
                         gene_annotations = encode_annotations(gene_annotations)
-                        fh.write(f"{seq_id}\ttRNAscan-SE\tgene\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{gene_annotations}\n")
+                        fh.write(f"{seq_id}\t{trna_tool}\tgene\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{gene_annotations}\n")
                     annotations = encode_annotations(annotations)
-                    fh.write(f"{seq_id}\ttRNAscan-SE\t{so.SO_TRNA.name}\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{annotations}\n")
+                    fh.write(f"{seq_id}\t{trna_tool}\t{so.SO_TRNA.name}\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{annotations}\n")
                 elif(feat['type'] == bc.FEATURE_TM_RNA):
+                    # both prokka and bakta use Aragorn
                     annotations = {
                         'ID': feat['locus'],
                         'Name': feat['product'],
@@ -120,6 +125,9 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                     annotations = encode_annotations(annotations)
                     fh.write(f"{seq_id}\tAragorn\t{so.SO_TMRNA.name}\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{annotations}\n")
                 elif(feat['type'] == bc.FEATURE_R_RNA):
+                    rrna_tool = "Infernal"
+                    if prokka:
+                        rrna_tool = "barrnap"
                     annotations = {
                         'ID': feat['locus'],
                         'Name': feat['product'],
@@ -144,10 +152,11 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                         if('truncated' in feat):
                             gene_annotations[bc.INSDC_FEATURE_PSEUDO] = True
                         gene_annotations = encode_annotations(gene_annotations)
-                        fh.write(f"{seq_id}\tInfernal\tgene\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{gene_annotations}\n")
+                        fh.write(f"{seq_id}\t{rrna_tool}\tgene\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{gene_annotations}\n")
                     annotations = encode_annotations(annotations)
-                    fh.write(f"{seq_id}\tInfernal\t{so.SO_RRNA.name}\t{start}\t{stop}\t{feat['evalue']}\t{feat['strand']}\t.\t{annotations}\n")
+                    fh.write(f"{seq_id}\t{rrna_tool}\t{so.SO_RRNA.name}\t{start}\t{stop}\t{feat['evalue']}\t{feat['strand']}\t.\t{annotations}\n")
                 elif(feat['type'] == bc.FEATURE_NC_RNA):
+                    # both prokka and bakta use infernal for ncrna
                     annotations = {
                         'ID': feat['locus'],
                         'Name': feat['product'],
@@ -197,6 +206,9 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                     annotations = encode_annotations(annotations)
                     fh.write(f"{seq_id}\tInfernal\t{so.SO_REGULATORY_REGION.name}\t{start}\t{stop}\t{feat['evalue']}\t{feat['strand']}\t.\t{annotations}\n")
                 elif(feat['type'] == bc.FEATURE_CRISPR):
+                    crispr_tool = "PILER-CR"
+                    if prokka:
+                        crispr_tool = "MinCED"
                     annotations = {
                         'ID': feat['id'],
                         'Name': feat['product'],
@@ -211,7 +223,7 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                         annotations[bc.INSDC_FEATURE_REPEAT_TYPE] = 'direct'
                         annotations[bc.INSDC_FEATURE_REPEAT_UNIT_SEQ] = feat['repeat_consensus']
                     annotations = encode_annotations(annotations)
-                    fh.write(f"{seq_id}\tPILER-CR\t{feat_type}\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{annotations}\n")
+                    fh.write(f"{seq_id}\t{crispr_tool}\t{feat_type}\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{annotations}\n")
                     if(not cfg.compliant):
                         i = 0
                         # spacers and repeats wont exist if Prokka input
@@ -225,6 +237,7 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                                     'Parent': feat['id']
                                 }
                                 annotations = encode_annotations(annotations)
+                                # will always be PILER here as prokka won't have any
                                 fh.write(f"{seq_id}\tPILER-CR\t{bc.FEATURE_CRISPR_REPEAT}\t{repeat['start']}\t{repeat['stop']}\t.\t{repeat['strand']}\t.\t{annotations}\n")
                                 spacer = feat['spacers'][i]
                                 annotations = {
@@ -255,6 +268,8 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                     if(feat.get('gene', None)):  # add gene annotation if available
                         annotations['gene'] = feat['gene']
                     source = '?' if feat.get('source', None) == bc.CDS_SOURCE_USER else 'Pyrodigal'
+                    if prokka: 
+                        source = 'Prodigal'
                     if(cfg.compliant):
                         gene_id = f"{feat['locus']}_gene"
                         annotations['Parent'] = gene_id
@@ -318,13 +333,16 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                     if(bc.FEATURE_SIGNAL_PEPTIDE in feat):
                         write_signal_peptide(fh, feat)
                 elif(feat['type'] == bc.FEATURE_GAP):
+                    gap_tool="Bakta"
+                    if prokka:
+                        gap_tool="Prokka"
                     annotations = {
                         'ID': feat['id'],
                         'Name': f"gap ({feat['length']} bp)",
                         'product': f"gap ({feat['length']} bp)"
                     }
                     annotations = encode_annotations(annotations)
-                    fh.write(f"{seq_id}\tBakta\t{so.SO_GAP.name}\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{annotations}\n")
+                    fh.write(f"{seq_id}\t{gap_tool}\t{so.SO_GAP.name}\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{annotations}\n")
                 elif(feat['type'] == bc.FEATURE_ORIC):
                     annotations = {
                         'ID': feat['id'],
