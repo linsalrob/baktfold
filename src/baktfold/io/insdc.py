@@ -213,8 +213,11 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
             elif(feature['type'] == bc.FEATURE_CRISPR):
                 qualifiers[bc.INSDC_FEATURE_REPEAT_FAMILY] = 'CRISPR'
                 qualifiers[bc.INSDC_FEATURE_REPEAT_TYPE] = 'direct'
-                qualifiers[bc.INSDC_FEATURE_REPEAT_UNIT_SEQ] = feature['repeat_consensus']
-                qualifiers['inference'] = 'COORDINATES:alignment:pilercr:1.02'
+                # prokka wont have this 
+                if('repeat_consensus' in feature):
+                    qualifiers[bc.INSDC_FEATURE_REPEAT_UNIT_SEQ] = feature['repeat_consensus']
+                    qualifiers['inference'] = 'COORDINATES:alignment:pilercr:1.02'
+                # prokka uses minced - maybe for later here
                 insdc_feature_type = bc.INSDC_FEATURE_REPEAT_REGION
                 qualifiers['note'].append(feature['product'])
                 qualifiers.pop('product', None)
