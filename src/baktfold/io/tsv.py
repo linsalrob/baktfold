@@ -68,8 +68,8 @@ def write_features(sequences: Sequence[dict], features_by_sequence: Dict[str, di
                     spacers = feat.get('spacers', [])
                     repeat = feat.get('repeat', [])
 
-                    if len(spacers) > 0 and len(repeat) > 0:
-
+                    if len(spacers) > 0 and len(repeat) > 0: 
+                    # if not - will just skip
                         while i < len(feat['spacers']):
                             repeat = feat['repeats'][i]
                             fh.write('\t'.join([seq_id, bc.FEATURE_CRISPR_REPEAT, str(repeat['start']), str(repeat['stop']), repeat['strand'], '', '', f"CRISPR repeat", '']))
