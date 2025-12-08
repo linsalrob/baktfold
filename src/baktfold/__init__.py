@@ -1421,7 +1421,7 @@ def createdb(
         fasta_aa, fasta_3di, foldseek_query_db_path, logdir, prefix
     )
 
-    # end phold
+    # end
     end_baktfold(start_time, "createdb")
 
 

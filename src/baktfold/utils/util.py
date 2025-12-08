@@ -190,6 +190,7 @@ def clean_up_temporary_files(output: Path, prefix: str) -> None:
     result_tsv_swissprot: Path = Path(output) / "foldseek_results_swissprot.tsv"
     result_tsv_afdb: Path = Path(output) / "foldseek_results_afdb_clusters.tsv"
     result_tsv_pdb: Path = Path(output) / "foldseek_results_pdb.tsv"
+    result_tsv_cath: Path = Path(output) / "foldseek_results_cath.tsv"
     result_tsv_custom: Path = Path(output) / "foldseek_results_custom.tsv"
     foldseek_db: Path = Path(output) / "foldseek_db"
     result_db_base: Path = Path(output) / "result_db"
@@ -204,4 +205,5 @@ def clean_up_temporary_files(output: Path, prefix: str) -> None:
     remove_file(result_tsv_afdb)
     remove_file(result_tsv_pdb)
     remove_file(result_tsv_custom)
+    remove_file(result_tsv_cath)
 
