@@ -23,7 +23,7 @@ def write_features(sequences: Sequence[dict], features_by_sequence: Dict[str, di
     logger.info(f'write feature tsv: path={tsv_path}')
 
     with tsv_path.open('wt') as fh:
-        fh.write('# Annotated with Bakta\n')
+        fh.write('# Annotated with Baktfold\n')
         fh.write(f'# Software: v{cfg.version}\n')
         fh.write(f"# Database: v{cfg.version}\n") # fix later
         #fh.write(f"# Database: v{cfg.db_info['major']}.{cfg.db_info['minor']}, {cfg.db_info['type']}\n")
@@ -216,7 +216,7 @@ def write_hypotheticals(hypotheticals: Sequence[dict], tsv_path: Path):
     logger.info('write hypothetical tsv: path=%s', tsv_path)
 
     with tsv_path.open('wt') as fh:
-        fh.write(f'#Annotated with Bakta v{cfg.version}, https://github.com/oschwengers/bakta\n')
+        fh.write(f'#Annotated with Baktfold v{cfg.version}, https://github.com/oschwengers/bakta\n')
         #fh.write(f"#Database v{cfg.db_info['major']}.{cfg.db_info['minor']}, https://doi.org/10.5281/zenodo.4247252\n")
         fh.write('#Sequence Id\tStart\tStop\tStrand\tLocus Tag\tMol Weight [kDa]\tIso El. Point\tPfam hits\tDbxrefs\n')
         for hypo in hypotheticals:

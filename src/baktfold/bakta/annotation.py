@@ -137,7 +137,7 @@ def combine_annotation(feature: dict):
     #     for hit in expert_hits:
     #         db_xrefs.update(hit.get('db_xrefs', []))
 
-    if product and product != "hypothetical protein":
+    if product and "hypothetical protein" not in product.lower():
         product = revise_cds_product(product)
         if(product):
             if(cfg.compliant):

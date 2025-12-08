@@ -18,6 +18,12 @@ import baktfold.bakta.so as so
 
 
 def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka: bool = False):
+
+    # need to pass the transl table from bakta or prokka not the config
+    # best to just detect it from the input json
+    # if prokka:
+    #     translation_table
+
     sequence_list = []
     for seq in data['sequences']:
         sequence_features = []
@@ -127,7 +133,7 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka: 
                     qualifiers[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNPROCESSED if feature[bc.PSEUDOGENE]['paralog'] else bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNITARY
                     qualifiers['note'].append(feature[bc.PSEUDOGENE]['description'])
                 else:
-                    qualifiers['protein_id'] = f"gnl|Bakta|{feature['locus']}"
+                    qualifiers['protein_id'] = f"gnl|Baktfold|{feature['locus']}"
                     qualifiers['translation'] = feature['aa']
                 qualifiers['codon_start'] = 1
                 qualifiers['transl_table'] = cfg.translation_table

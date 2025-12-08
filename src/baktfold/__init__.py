@@ -1321,6 +1321,109 @@ def proteins_compare(
     # end baktfold
     end_baktfold(start_time, "protein-compare")
 
+"""
+createdb command
+"""
+
+
+@main_cli.command()
+@click.help_option("--help", "-h")
+@click.version_option(get_version(), "--version", "-V")
+@click.pass_context
+@click.option(
+    "--fasta-aa",
+    help="Path to input Amino Acid FASTA file of proteins",
+    type=click.Path(),
+    required=True,
+)
+@click.option(
+    "--fasta-3di",
+    help="Path to input 3Di FASTA file of proteins",
+    type=click.Path(),
+    required=True,
+)
+@click.option(
+    "-o",
+    "--output",
+    default="output_baktfold_foldseek_db",
+    show_default=True,
+    type=click.Path(),
+    help="Output directory ",
+)
+@click.option(
+    "-t",
+    "--threads",
+    help="Number of threads to use with Foldseek",
+    default=1,
+    type=int,
+    show_default=True,
+)
+@click.option(
+    "-p",
+    "--prefix",
+    default="baktfold_foldseek_db",
+    help="Prefix for Foldseek database",
+    type=str,
+    show_default=True,
+)
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Force overwrites the output directory",
+)
+def createdb(
+    ctx,
+    fasta_aa,
+    fasta_3di,
+    output,
+    threads,
+    prefix,
+    force,
+    **kwargs,
+):
+    """Creates foldseek DB from AA FASTA and 3Di FASTA input files"""
+
+    # validates the directory  (need to before I start phold or else no log file is written)
+    instantiate_dirs(output, force, restart=False)
+
+    output: Path = Path(output)
+    logdir: Path = Path(output) / "logs"
+
+    params = {
+        "--fasta-aa": fasta_aa,
+        "--fasta-3di": fasta_3di,
+        "--output": output,
+        "--threads": threads,
+        "--force": force,
+        "--prefix": prefix,
+    }
+
+    # initial logging etc
+    start_time = begin_baktfold(params, "createdb")
+
+    # check foldseek is installed
+    check_dependencies()
+
+    logger.info(f"Creating the Foldseek database using {fasta_aa} and {fasta_3di}.")
+    logger.info(
+        f"The database will be saved in the {output} directory and be called {prefix}."
+    )
+
+    ############
+    # create foldseek db
+    ############
+
+    foldseek_query_db_path: Path = Path(output)
+    foldseek_query_db_path.mkdir(parents=True, exist_ok=True)
+
+    generate_foldseek_db_from_aa_3di(
+        fasta_aa, fasta_3di, foldseek_query_db_path, logdir, prefix
+    )
+
+    # end phold
+    end_baktfold(start_time, "createdb")
+
 
 """
 install command
