@@ -304,45 +304,49 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                 if('edge' in feat):
                     stop += seq['length']
 
-                if(feat['type'] == bc.FEATURE_T_RNA and euk is not True):
+                if(feat['type'] == bc.FEATURE_T_RNA):
 
-                    trna_tool = "tRNAscan-SE"
-                    if prokka:
-                        trna_tool = "Aragorn"
-                    annotations = {
-                        'ID': feat['locus'],
-                        'Name': feat['product'],
-                        'locus_tag': feat['locus'],
-                        'product': feat['product'],
-                        'Dbxref': feat['db_xrefs']
-                    }
-                    if(feat.get('gene', None)):  # add gene annotation if available
-                        annotations['gene'] = feat['gene']
-                    if(bc.PSEUDOGENE in feat):
-                        annotations[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNKNOWN
-                    elif('truncated' in feat):
-                        annotations[bc.INSDC_FEATURE_PSEUDO] = True
-                    if(feat.get('anti_codon', False)):
-                        annotations['anti_codon'] = feat['anti_codon']
-                    if(feat.get('amino_acid', False)):
-                        annotations['amino_acid'] = feat['amino_acid']
-                    if(cfg.compliant):
-                        gene_id = f"{feat['locus']}_gene"
-                        annotations['Parent'] = gene_id
-                        annotations['inference'] = 'profile:tRNAscan:2.0'
-                        annotations['Dbxref'], annotations['Note'] = insdc.revise_dbxref_insdc(feat['db_xrefs'])  # remove INSDC invalid DbXrefs
-                        gene_annotations = {
-                            'ID': gene_id,
-                            'locus_tag': feat['locus']
+                    if euk:
+                        write_euk_trna_feature(fh, seq_id, feat)
+                    else:
+
+                        trna_tool = "tRNAscan-SE"
+                        if prokka:
+                            trna_tool = "Aragorn"
+                        annotations = {
+                            'ID': feat['locus'],
+                            'Name': feat['product'],
+                            'locus_tag': feat['locus'],
+                            'product': feat['product'],
+                            'Dbxref': feat['db_xrefs']
                         }
-                        if(feat.get('gene', None)):
-                            gene_annotations['gene'] = feat['gene']
+                        if(feat.get('gene', None)):  # add gene annotation if available
+                            annotations['gene'] = feat['gene']
                         if(bc.PSEUDOGENE in feat):
-                            gene_annotations[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNKNOWN
-                        gene_annotations = encode_annotations(gene_annotations)
-                        fh.write(f"{seq_id}\t{trna_tool}\tgene\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{gene_annotations}\n")
-                    annotations = encode_annotations(annotations)
-                    fh.write(f"{seq_id}\t{trna_tool}\t{so.SO_TRNA.name}\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{annotations}\n")
+                            annotations[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNKNOWN
+                        elif('truncated' in feat):
+                            annotations[bc.INSDC_FEATURE_PSEUDO] = True
+                        if(feat.get('anti_codon', False)):
+                            annotations['anti_codon'] = feat['anti_codon']
+                        if(feat.get('amino_acid', False)):
+                            annotations['amino_acid'] = feat['amino_acid']
+                        if(cfg.compliant):
+                            gene_id = f"{feat['locus']}_gene"
+                            annotations['Parent'] = gene_id
+                            annotations['inference'] = 'profile:tRNAscan:2.0'
+                            annotations['Dbxref'], annotations['Note'] = insdc.revise_dbxref_insdc(feat['db_xrefs'])  # remove INSDC invalid DbXrefs
+                            gene_annotations = {
+                                'ID': gene_id,
+                                'locus_tag': feat['locus']
+                            }
+                            if(feat.get('gene', None)):
+                                gene_annotations['gene'] = feat['gene']
+                            if(bc.PSEUDOGENE in feat):
+                                gene_annotations[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNKNOWN
+                            gene_annotations = encode_annotations(gene_annotations)
+                            fh.write(f"{seq_id}\t{trna_tool}\tgene\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{gene_annotations}\n")
+                        annotations = encode_annotations(annotations)
+                        fh.write(f"{seq_id}\t{trna_tool}\t{so.SO_TRNA.name}\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{annotations}\n")
                 elif(feat['type'] == bc.FEATURE_TM_RNA):
                     # both prokka and bakta use Aragorn
                     annotations = {
@@ -504,57 +508,58 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                                 annotations = { 'ID': f"{feat['id']}_repeat_{i+1}" }
                                 annotations = encode_annotations(annotations)
                                 fh.write(f"{seq_id}\tPILER-CR\t{bc.FEATURE_CRISPR_REPEAT}\t{repeat['start']}\t{repeat['stop']}\t.\t{repeat['strand']}\t.\t{annotations}\n")
-                elif(feat['type'] == bc.FEATURE_CDS and euk is not True):
-                    annotations = {
-                        'ID': feat['locus'],
-                        'Name': feat['product'],
-                        'locus_tag': feat['locus'],
-                        'product': feat['product'],
-                        'Dbxref': feat['db_xrefs']
-                    }
-                    if(bc.PSEUDOGENE in feat):
-                        annotations[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNPROCESSED if feat[bc.PSEUDOGENE]['paralog'] else bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNITARY
-                    elif('truncated' in feat):
-                        annotations[bc.INSDC_FEATURE_PSEUDO] = True
-                    if(feat.get('gene', None)):  # add gene annotation if available
-                        annotations['gene'] = feat['gene']
-                    source = '?' if feat.get('source', None) == bc.CDS_SOURCE_USER else 'Pyrodigal'
+                elif feat['type'] == bc.FEATURE_CDS:
                     if euk:
-                        source = 'funannotate'
-                    if prokka: 
-                        source = 'Prodigal'
-                    if(cfg.compliant):
-                        gene_id = f"{feat['locus']}_gene"
-                        annotations['Parent'] = gene_id
-                        annotations['inference'] = 'EXISTENCE:non-experimental evidence, no additional details recorded' if feat.get('source', None) == bc.CDS_SOURCE_USER else 'ab initio prediction:Pyrodigal:3.5'
-                        annotations['Dbxref'], annotations['Note'] = insdc.revise_dbxref_insdc(feat['db_xrefs'])  # remove INSDC invalid DbXrefs
-                        annotations['Note'], ec_number = insdc.extract_ec_from_notes_insdc(annotations, 'Note')
-                        if(ec_number is not None):
-                            annotations['ec_number'] = ec_number
-                        gene_annotations = {
-                            'ID': gene_id,
-                            'locus_tag': feat['locus']
+                        write_euk_cds_feature(fh, seq_id, feat)
+                    else:
+                        annotations = {
+                            'ID': feat['locus'],
+                            'Name': feat['product'],
+                            'locus_tag': feat['locus'],
+                            'product': feat['product'],
+                            'Dbxref': feat['db_xrefs']
                         }
-                        if(feat.get('gene', None)):
-                            gene_annotations['gene'] = feat['gene']
                         if(bc.PSEUDOGENE in feat):
-                            gene_annotations[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNPROCESSED if feat[bc.PSEUDOGENE]['paralog'] else bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNITARY
-                        gene_annotations = encode_annotations(gene_annotations)
-                        fh.write(f"{seq_id}\t{source}\tgene\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{gene_annotations}\n")
-                    if('exception' in feat):
-                        ex = feat['exception']
-                        pos = f"{ex['start']}..{ex['stop']}"
-                        if(feat['strand'] == bc.STRAND_REVERSE):
-                            pos = f"complement({pos})"
-                        annotations['transl_except']=f"(pos:{pos},aa:{ex['aa']})"
-                        notes = annotations.get('Note', [])
-                        notes.append(f"codon on position {ex['codon_position']} is a {ex['type']} codon")
-                        if('Notes' not in annotations):
-                            annotations['Note'] = notes
-                    annotations = encode_annotations(annotations)
-                    fh.write(f"{seq_id}\t{source}\t{so.SO_CDS.name}\t{start}\t{stop}\t.\t{feat['strand']}\t0\t{annotations}\n")
-                    if(bc.FEATURE_SIGNAL_PEPTIDE in feat):
-                        write_signal_peptide(fh, feat)
+                            annotations[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNPROCESSED if feat[bc.PSEUDOGENE]['paralog'] else bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNITARY
+                        elif('truncated' in feat):
+                            annotations[bc.INSDC_FEATURE_PSEUDO] = True
+                        if(feat.get('gene', None)):  # add gene annotation if available
+                            annotations['gene'] = feat['gene']
+                        source = '?' if feat.get('source', None) == bc.CDS_SOURCE_USER else 'Pyrodigal'
+                        if prokka: 
+                            source = 'Prodigal'
+                        if(cfg.compliant):
+                            gene_id = f"{feat['locus']}_gene"
+                            annotations['Parent'] = gene_id
+                            annotations['inference'] = 'EXISTENCE:non-experimental evidence, no additional details recorded' if feat.get('source', None) == bc.CDS_SOURCE_USER else 'ab initio prediction:Pyrodigal:3.5'
+                            annotations['Dbxref'], annotations['Note'] = insdc.revise_dbxref_insdc(feat['db_xrefs'])  # remove INSDC invalid DbXrefs
+                            annotations['Note'], ec_number = insdc.extract_ec_from_notes_insdc(annotations, 'Note')
+                            if(ec_number is not None):
+                                annotations['ec_number'] = ec_number
+                            gene_annotations = {
+                                'ID': gene_id,
+                                'locus_tag': feat['locus']
+                            }
+                            if(feat.get('gene', None)):
+                                gene_annotations['gene'] = feat['gene']
+                            if(bc.PSEUDOGENE in feat):
+                                gene_annotations[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNPROCESSED if feat[bc.PSEUDOGENE]['paralog'] else bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNITARY
+                            gene_annotations = encode_annotations(gene_annotations)
+                            fh.write(f"{seq_id}\t{source}\tgene\t{start}\t{stop}\t.\t{feat['strand']}\t.\t{gene_annotations}\n")
+                        if('exception' in feat):
+                            ex = feat['exception']
+                            pos = f"{ex['start']}..{ex['stop']}"
+                            if(feat['strand'] == bc.STRAND_REVERSE):
+                                pos = f"complement({pos})"
+                            annotations['transl_except']=f"(pos:{pos},aa:{ex['aa']})"
+                            notes = annotations.get('Note', [])
+                            notes.append(f"codon on position {ex['codon_position']} is a {ex['type']} codon")
+                            if('Notes' not in annotations):
+                                annotations['Note'] = notes
+                        annotations = encode_annotations(annotations)
+                        fh.write(f"{seq_id}\t{source}\t{so.SO_CDS.name}\t{start}\t{stop}\t.\t{feat['strand']}\t0\t{annotations}\n")
+                        if(bc.FEATURE_SIGNAL_PEPTIDE in feat):
+                            write_signal_peptide(fh, feat)
                 elif(feat['type'] == bc.FEATURE_SORF):
                     annotations = {
                         'ID': feat['locus'],
@@ -639,10 +644,6 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                     write_gene_feature(fh, seq_id, feat)
                 elif(feat['type'] == bc.FEATURE_MRNA):
                     write_mrna_feature(fh, seq_id, feat)
-                elif(feat['type'] == bc.FEATURE_CDS and euk is True):
-                    write_euk_cds_feature(fh, seq_id, feat)
-                elif(feat['type'] == bc.FEATURE_T_RNA and euk is True):
-                    write_euk_trna_feature(fh, seq_id, feat)
 
         if(not cfg.compliant):
             fh.write('##FASTA\n')

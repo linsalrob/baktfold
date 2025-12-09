@@ -17,7 +17,7 @@ import baktfold.bakta.so as so
 # log = logging.getLogger('INSDC')
 
 
-def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka: bool = False, euk: bool = False):
+def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka, euk):
 
     # need to pass the transl table from bakta or prokka not the config
     # best to just detect it from the input json
@@ -357,7 +357,10 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka: 
 def write_features(data: dict, features: Sequence[dict], genbank_output_path: Path, embl_output_path: Path, euk: bool = False):
     logger.info(f'prepare: genbank={genbank_output_path}, embl={embl_output_path}')
 
-    sequence_list = build_biopython_sequence_list(data, features, euk)
+    # fix later
+    prokka = False
+
+    sequence_list = build_biopython_sequence_list(data, features, prokka, euk)
     with genbank_output_path.open('wt', encoding='utf-8') as fh:
         logger.info(f'write GenBank: path={genbank_output_path}')
         SeqIO.write(sequence_list, fh, format='genbank')
