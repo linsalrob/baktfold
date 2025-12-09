@@ -24,15 +24,11 @@ from baktfold.subcommands.predict import subcommand_predict
 from baktfold.utils.constants import DB_DIR, CNN_DIR
 from baktfold.utils.util import (begin_baktfold, clean_up_temporary_files, end_baktfold,
                               get_version, print_citation)
-from baktfold.utils.validation import (check_dependencies, instantiate_dirs,
-                                    validate_input)
+from baktfold.utils.validation import (check_dependencies, instantiate_dirs,validate_outfile,
+                                    check_genbank_and_prokka)
 
+from baktfold.io.prokka_gbk_to_json import prokka_gbk_to_json
 import baktfold.bakta.config as cfg
-import baktfold.io.gff as gff
-import baktfold.io.tsv as tsv
-import baktfold.io.insdc as insdc
-import baktfold.io.fasta as fasta
-import baktfold.io.json as json
 import baktfold.io.io as io
 
 log_fmt = (
@@ -1423,6 +1419,76 @@ def createdb(
 
     # end
     end_baktfold(start_time, "createdb")
+
+"""
+convert prokka GenBank to Bakta formatted json
+"""
+
+@main_cli.command()
+@click.help_option("--help", "-h")
+@click.version_option(get_version(), "--version", "-V")
+@click.pass_context
+@click.option(
+    "-i",
+    "--input",
+    help="Path to input Prokka GenBank (.gbk) output",
+    type=click.Path(),
+    required=True,
+)
+@click.option(
+    "-o",
+    "--outfile",
+    default="prokka_bakta_formatted.json",
+    show_default=True,
+    type=click.Path(),
+    help="Output bakta format .json output",
+)
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Force overwrites the output file",
+)
+def convert_prokka(
+    ctx,
+    input,
+    outfile,
+    force,
+    **kwargs,
+):
+    """Converts Prokka GenBank output to Bakta format json"""
+
+    # validates the output file - check it doesnt exist, if it does overwrite it
+    validate_outfile(outfile, force)
+
+    # validates input genbank and returns records
+    records = check_genbank_and_prokka(input)
+
+
+    params = {
+        "--input": input,
+        "--outfile": outfile,
+        "--force": force,
+    }
+
+    # initial logging etc
+    start_time = begin_baktfold(params, "convert-prokka", no_log=True)
+
+    # check foldseek is installed
+    # check_dependencies()
+
+    logger.info(f"Converting Prokka input GenBank file {input} to Bakta formatted .json file.")
+    logger.info(
+        f"This will be saved as {outfile}."
+    )
+
+    prokka_gbk_to_json(records, outfile)
+
+    logger.info(f"Conversion successful.")
+    logger.info(f"Bakta format JSON → {outfile}")
+ 
+    # end
+    end_baktfold(start_time, "convert-prokka")
 
 
 """

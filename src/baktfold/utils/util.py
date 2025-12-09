@@ -51,13 +51,14 @@ begin and end functions
 """
 
 
-def begin_baktfold(params: Dict[str, Any], subcommand: str) -> int:
+def begin_baktfold(params: Dict[str, Any], subcommand: str, no_log: bool = False) -> int:
     """
     Begin baktfold process.
 
     Parameters:
         params (Dict[str, Any]): A dictionary of parameters for baktfold.
         subcommand (str): Subcommand indicating the baktfold operation.
+        no_log (bool): No log file
 
     Returns:
         int: Start time of the baktfold process.
@@ -68,9 +69,10 @@ def begin_baktfold(params: Dict[str, Any], subcommand: str) -> int:
     cfg.run_start = datetime.now()
 
     # initial logging stuff
-    log_file = os.path.join(params["--output"], f"baktfold_{subcommand}_{start_time}.log")
-    # adds log file
-    logger.add(log_file)
+    if not no_log:
+        log_file = os.path.join(params["--output"], f"baktfold_{subcommand}_{start_time}.log")
+        # adds log file
+        logger.add(log_file)
     logger.add(lambda _: sys.exit(1), level="ERROR")
 
     print_splash()
