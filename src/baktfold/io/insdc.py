@@ -63,10 +63,39 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka, 
             'comment': comment
             # TODO: taxonomy
         }
-        source_qualifiers = {
-            'mol_type': 'genomic DNA'
-            # 'molecule_type': 'DNA' #  might be necessary in BioPython > 1.78 along with removal of Seq(..., generic_dna)
-        }
+        if euk:
+
+            source_qualifiers = {}
+
+            # Optional fields – add only if present
+            optional_fields = [
+                'mol_type',
+                'organism', #  should be present
+                'strain', #  should be present
+                'isolate', #  should be present
+                'db_xref', #  should be present
+                'note', #  should be present
+                'collection_date',
+                'country',
+                'host',
+                'isolation_source'
+            ]
+
+            for field in optional_fields:
+                value = seq.get(field)
+                if value:  # only add if exists and is truth
+                    source_qualifiers[field] = value
+                else:
+                    if field == 'mol_type':
+                        # Always include mol_type
+                        source_qualifiers['mol_type'] = 'genomic DNA'
+            
+        else:
+            
+            source_qualifiers = {
+                'mol_type': 'genomic DNA'
+                # 'molecule_type': 'DNA' #  might be necessary in BioPython > 1.78 along with removal of Seq(..., generic_dna)
+            }
 
         description = ''
         if(data['genome'].get('taxon', None)):
