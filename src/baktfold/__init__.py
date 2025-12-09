@@ -433,7 +433,6 @@ def run(
     # put back in dictionary
     data['features'] = combined_features_sorted
 
-
     # map features by sequence for io
     features_by_sequence = {seq['id']: [] for seq in data['sequences']}
 
@@ -447,7 +446,17 @@ def run(
     features = []
     for seq in data['sequences']:
         seq_features = features_by_sequence[seq['id']]
-        seq_features.sort(key=lambda k: k['start'])  # sort features by start position
+        if euk: # ensure gene -> mRNA -> CDS ordering for each locus tag
+            type_order = {'source': 0,'gene': 1, 'mRNA': 2, 'CDS': 3, 'tRNA': 4 }
+            seq_features.sort(
+                key=lambda f: (
+                    f.get('locus_tag', ''),                  #  locus (assumes they are ascending)
+                    type_order.get(f['type'], 99),           #  feature type
+                    f.get('start', float('inf'))             #  start
+                )
+            )
+        else:
+            seq_features.sort(key=lambda k: k['start'])  # sort features by start position
         features.extend(seq_features)
 
     # overwrite feature list with sorted features
@@ -1005,9 +1014,20 @@ def compare(
 
     # flatten sorted features
     features = []
+
     for seq in data['sequences']:
         seq_features = features_by_sequence[seq['id']]
-        seq_features.sort(key=lambda k: k['start'])  # sort features by start position
+        if euk: # ensure gene -> mRNA -> CDS ordering for each locus tag
+            type_order = {'source': 0,'gene': 1, 'mRNA': 2, 'CDS': 3, 'tRNA': 4 }
+            seq_features.sort(
+                key=lambda f: (
+                    f.get('locus_tag', ''),                  #  locus (assumes they are ascending)
+                    type_order.get(f['type'], 99),           #  feature type
+                    f.get('start', float('inf'))             #  start
+                )
+            )
+        else:
+            seq_features.sort(key=lambda k: k['start'])  # sort features by start position
         features.extend(seq_features)
 
     # overwrite feature list with sorted features

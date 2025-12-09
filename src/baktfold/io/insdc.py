@@ -141,19 +141,29 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka, 
                     qualifiers[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNPROCESSED if feature[bc.PSEUDOGENE]['paralog'] else bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNITARY
                     qualifiers['note'].append(feature[bc.PSEUDOGENE]['description'])
                 else:
-                    qualifiers['protein_id'] = f"gnl|Baktfold|{feature['locus']}"
+                    # add protein id for euk
+                    if euk:
+                        if feature.get('protein_id'):
+                            qualifiers['protein_id'] = feature['protein_id']
+                        else:
+                            qualifiers['protein_id'] = f"gnl|Baktfold|{feature['locus']}"  
+                    else:
+                        qualifiers['protein_id'] = f"gnl|Baktfold|{feature['locus']}"
                     qualifiers['translation'] = feature['aa']
                 qualifiers['codon_start'] = 1
-                qualifiers['transl_table'] = cfg.translation_table
+                if not euk:
+                    qualifiers['transl_table'] = cfg.translation_table
                 insdc_feature_type = bc.INSDC_FEATURE_CDS
                 inference = []
                 if(feature['type'] == bc.FEATURE_CDS):
+                    # add inference
                     if prokka:
                         inference.append('ab initio prediction:Prodigal:2.6')
                     if(feature.get('source', None) == bc.CDS_SOURCE_USER):
                         inference.append('EXISTENCE:non-experimental evidence, no additional details recorded')
                     else:
-                        inference.append('ab initio prediction:Prodigal:2.6')
+                        if not euk: # if euk just dont have anything
+                            inference.append('ab initio prediction:Prodigal:2.6')
                 else:
                     inference.append(f"ab initio prediction:Bakta:{'.'.join(cfg.version.split('.')[0:2])}")
                 if('ncbi_nrp_id' in feature.get('ups', {})):
