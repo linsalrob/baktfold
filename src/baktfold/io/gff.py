@@ -52,9 +52,6 @@ def write_mrna_feature(fh, seq_id, feat):
         "Parent": f"{locus}",
     }
 
-
-    attrs = {}
-
     product = feat.get("product", [])
 
     if product:
