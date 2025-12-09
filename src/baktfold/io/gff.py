@@ -110,7 +110,12 @@ def write_mrna_feature(fh, seq_id, feat):
     strand = feat.get("strand")
     seq_id = feat.get("sequence")
 
-    if starts and stops:
+    if (
+        isinstance(starts, list)
+        and isinstance(stops, list)
+        and len(starts) == len(stops)
+        and len(starts) > 0
+    ):
         # For minus strand, exons must be written in reverse order (5'→3')
         if strand == "-":
             exon_parts = list(zip(starts, stops))
@@ -144,59 +149,48 @@ def write_mrna_feature(fh, seq_id, feat):
 
 def write_euk_cds_feature(fh, seq_id, feat):
     """
-    Write a eukaryotic CDS feature to GFF3 with multiple parts matching mRNA exons.
-    
+    Write a eukaryotic CDS feature to GFF3 with multiple CDS parts.
+
     Parameters
     ----------
-    fh : file-like
-        Open file handle to write GFF lines.
+    fh : file-handle
     seq_id : str
-        Sequence/contig ID.
-    feat : SeqFeature
-        Biopython SeqFeature object of type 'CDS'.
-
-    Notes
-    -----
-    - Splits multi-part CDS into individual lines matching exon positions.
-    - Calculates the correct phase for each CDS part.
-    - Includes selected qualifiers: product, Ontology_term, Dbxref, note.
-    - IDs: CDS ID = transcript-T1.cds; exon IDs match transcript-T1.exonN
+    feat : dict-like feature with keys:
+            "start", "stop", "strand", "locus", "starts", "stops"
     """
 
-    
-    strand = feat['strand']
-    
-    locus = feat['locus']
+    strand = feat.get("strand", "+")
+    locus = feat.get("locus", "unknown")
 
     transcript_id = f"{locus}-T1"
     cds_id = f"{transcript_id}.cds"
 
-
-
     starts = feat.get("starts")
     stops = feat.get("stops")
 
-    cds_coords = []
-
-    # Determine CDS coordinate blocks
+    # -------------------------------
+    # 1. Determine CDS sub-coordinates
+    # -------------------------------
     if (
-        starts
-        and stops
-        and isinstance(starts, list)
+        isinstance(starts, list)
         and isinstance(stops, list)
         and len(starts) == len(stops)
+        and len(starts) > 0
     ):
         cds_coords = list(zip(starts, stops))
     else:
-        # Fallback: single CDS feature
         cds_coords = [(feat["start"], feat["stop"])]
 
-    # Reverse block order for negative strand (5' → 3')
-    strand = feat["strand"]
+    # -------------------------------
+    # 2. Reverse order for negative strand
+    # -------------------------------
     if strand == "-":
         cds_coords.reverse()
 
-    offset = 0  # used for phase calculation
+    # -------------------------------
+    # 3. Emit CDS lines with correct phase
+    # -------------------------------
+    offset = 0
 
     for i, (cds_start, cds_stop) in enumerate(cds_coords, start=1):
 
@@ -204,11 +198,11 @@ def write_euk_cds_feature(fh, seq_id, feat):
         phase = offset % 3
         offset += length
 
-        attr_str = f"ID={cds_id};Parent={transcript_id};"
+        attr = f"ID={cds_id}-{i};Parent={transcript_id}"
 
         fh.write(
             f"{seq_id}\tfunannotate\tCDS\t{cds_start}\t{cds_stop}"
-            f"\t.\t{strand}\t{phase}\t{attr_str}\n"
+            f"\t.\t{strand}\t{phase}\t{attr}\n"
         )
 
 
@@ -525,6 +519,8 @@ def write_features(data: dict, features_by_sequence: Dict[str, dict], gff3_path:
                     if(feat.get('gene', None)):  # add gene annotation if available
                         annotations['gene'] = feat['gene']
                     source = '?' if feat.get('source', None) == bc.CDS_SOURCE_USER else 'Pyrodigal'
+                    if euk:
+                        source = 'funannotate'
                     if prokka: 
                         source = 'Prodigal'
                     if(cfg.compliant):

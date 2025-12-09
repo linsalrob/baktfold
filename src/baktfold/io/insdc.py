@@ -24,7 +24,7 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka: 
     # if prokka:
     #     translation_table
 
-    # need to give euk to not give trnas as trnascan - do later
+    # need to give euk to not give trnas as trnascan - do
 
     sequence_list = []
     for seq in data['sequences']:
@@ -342,7 +342,9 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka: 
                 elif('truncated' in feature):
                     gene_qualifier[bc.INSDC_FEATURE_PSEUDO] = None
                 gen_seqfeat = SeqFeature(feature_location, type='gene', qualifiers=gene_qualifier)
-                seq_feature_list.append(gen_seqfeat)
+                # dont append gene feature for CDS MRNA GENE euks
+                if not euk:
+                    seq_feature_list.append(gen_seqfeat)
             feat_seqfeat = SeqFeature(feature_location, type=insdc_feature_type, qualifiers=qualifiers)
             seq_feature_list.append(feat_seqfeat)
             for acc_feature in accompanying_features:  # add accompanying features, e.g. signal peptides
@@ -352,10 +354,10 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka: 
     return sequence_list
 
 
-def write_features(data: dict, features: Sequence[dict], genbank_output_path: Path, embl_output_path: Path):
+def write_features(data: dict, features: Sequence[dict], genbank_output_path: Path, embl_output_path: Path, euk: bool = False):
     logger.info(f'prepare: genbank={genbank_output_path}, embl={embl_output_path}')
 
-    sequence_list = build_biopython_sequence_list(data, features)
+    sequence_list = build_biopython_sequence_list(data, features, euk)
     with genbank_output_path.open('wt', encoding='utf-8') as fh:
         logger.info(f'write GenBank: path={genbank_output_path}')
         SeqIO.write(sequence_list, fh, format='genbank')

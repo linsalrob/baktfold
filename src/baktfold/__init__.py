@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.0.1'
+__version__ = '0.1.0'
 
 import gzip
 from pathlib import Path
@@ -196,6 +196,11 @@ def compare_options(func):
             "--custom-annotations",
             type=click.Path(),
             help="Custom Foldseek DB annotations, 2 column tsv. Column 1 matches the Foldseek headers, column 2 is the description.",
+        ),
+        click.option(
+            "--euk",
+            is_flag=True,
+            help="Eukaryotic input genome.",
         )
     ]
     for option in reversed(options):
@@ -276,6 +281,7 @@ def run(
     custom_annotations,
     foldseek_gpu,
     all_proteins,
+    euk,
     **kwargs,
 ):
     """baktfold predict then comapare all in one - GPU recommended"""
@@ -308,7 +314,8 @@ def run(
         "--custom-db": custom_db,
         "--custom-annotations": custom_annotations,
         "--foldseek-gpu": foldseek_gpu,
-        "--all-proteins": all_proteins
+        "--all-proteins": all_proteins,
+        "--euk": euk
     }
 
     # initial logging etc
@@ -461,7 +468,7 @@ def run(
 
 
     logger.info('writing baktfold outputs')
-    io.write_bakta_outputs(data, features, features_by_sequence, output, prefix, custom_db)
+    io.write_bakta_outputs(data, features, features_by_sequence, output, prefix, custom_db, euk)
 
     # cleanup the temp files
     if not keep_tmp_files:
@@ -856,6 +863,7 @@ def compare(
     custom_annotations,
     foldseek_gpu,
     all_proteins,
+    euk,
     **kwargs,
 ):
     """Runs Foldseek vs baktfold db"""
@@ -885,7 +893,8 @@ def compare(
         "--custom-db": custom_db,
         "--custom-annotations": custom_annotations,
         "--foldseek-gpu": foldseek_gpu,
-        "--all-proteins": all_proteins
+        "--all-proteins": all_proteins,
+        "--euk": euk
     }
 
     # initial logging etc
@@ -1017,7 +1026,7 @@ def compare(
     # bakta output module
     ####
     logger.info('writing baktfold outputs')
-    io.write_bakta_outputs(data,features, features_by_sequence, output, prefix, custom_db)
+    io.write_bakta_outputs(data,features, features_by_sequence, output, prefix, custom_db, euk)
 
     # cleanup the temp files
     if not keep_tmp_files:
