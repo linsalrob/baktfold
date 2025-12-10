@@ -764,9 +764,7 @@ def calc_genome_stats(records):
         "coding_ratio": None  
     }
 
-def eukaryotic_gbk_to_json(genbank_path, output_json):
-
-    records = list(SeqIO.parse(genbank_path, "genbank"))
+def eukaryotic_gbk_to_json(records, output_json):
     
     if len(records) == 0:
         raise ValueError("No GenBank records found.")
@@ -781,13 +779,10 @@ def eukaryotic_gbk_to_json(genbank_path, output_json):
         for feature in record.features
     }
 
-    print("Unique feature types:")
-    print(unique_feature_types)
-
     ORDER = ["tRNA", "gene", "mRNA", "CDS", "assembly_gap", "gap", "repeat_region", "5'UTR", "3'UTR"]
 
-    # Make sure the comparison is consistent (normalize UTR names)
-    covered_set = set(ORDER)
+     # source always in input - it is made in output anyway
+    covered_set = set(ORDER + ["source"])
 
     # Compute features in records not in the covered list
     uncovered_features = unique_feature_types - covered_set
