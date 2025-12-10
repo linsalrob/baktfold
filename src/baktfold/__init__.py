@@ -353,7 +353,7 @@ def run(
         non_hypothetical_features = [
         feat for feat in features
         if (feat['type'] != bc.FEATURE_CDS) or 
-        (feat['type'] == bc.FEATURE_CDS and 'hypothetical' not in (feat.get('product') or '').lower())
+        (feat['type'] == bc.FEATURE_CDS and 'hypothetical' not in feat)
     ]
 
     # put the CDS AA in a simple dictionary for ProstT5 code
@@ -762,18 +762,19 @@ def predict(
     ###
 
     if all_proteins:
-        hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS ]
-        
-        non_hypothetical_features = [
-        feat for feat in features
-        if (feat['type'] != bc.FEATURE_CDS) 
-    ]
+        hypotheticals = [
+            feat for feat in features
+            if feat['type'] == bc.FEATURE_CDS
+        ]
     else:
-        hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat]
-        non_hypothetical_features = [
+        hypotheticals = [
+            feat for feat in features
+            if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat
+        ]
+
+    non_hypothetical_features = [
         feat for feat in features
-        if (feat['type'] != bc.FEATURE_CDS) or 
-        (feat['type'] == bc.FEATURE_CDS and 'hypothetical' not in (feat.get('product') or '').lower())
+        if feat not in hypotheticals
     ]
 
 
@@ -940,19 +941,19 @@ def compare(
     ###
 
     if all_proteins:
-        hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS ]
-        
-        non_hypothetical_features = [
-        feat for feat in features
-        if (feat['type'] != bc.FEATURE_CDS) 
-    ]
+        hypotheticals = [
+            feat for feat in features
+            if feat['type'] == bc.FEATURE_CDS
+        ]
     else:
+        hypotheticals = [
+            feat for feat in features
+            if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat
+        ]
 
-        hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat]
-        non_hypothetical_features = [
+    non_hypothetical_features = [
         feat for feat in features
-        if (feat['type'] != bc.FEATURE_CDS) or 
-        (feat['type'] == bc.FEATURE_CDS and 'hypothetical' not in (feat.get('product') or '').lower())
+        if feat not in hypotheticals
     ]
 
     # code to read in and append 3Di from ProstT5 to the dictionary for the json output
