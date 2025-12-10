@@ -336,7 +336,7 @@ def run(
     ###
 
     fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
-    data, features = parse_json_input(input, fasta_aa, all_proteins)
+    data, features, has_duplicate_locus = parse_json_input(input, fasta_aa, all_proteins)
 
     ###
     # split features in hypotheticals and non hypotheticals
@@ -362,7 +362,10 @@ def run(
     # put the CDS AA in a simple dictionary for ProstT5 code
     cds_dict = {}
     for feat in hypotheticals:
-        cds_dict[feat['locus']] = feat['aa']
+        if has_duplicate_locus:
+            cds_dict[feat['id']] = feat['aa']
+        else:
+            cds_dict[feat['locus']] = feat['aa']
 
 
     # add a function to add 3Di to cds_dict
@@ -385,11 +388,11 @@ def run(
         model_name,
         checkpoint_path,
         batch_size,
-        proteins_flag=False,
         save_per_residue_embeddings=save_per_residue_embeddings,
         save_per_protein_embeddings=save_per_protein_embeddings,
         threads=threads,
         mask_threshold=mask_threshold,
+        has_duplicate_locus=has_duplicate_locus
     )
 
     # baktfold compare
@@ -414,7 +417,8 @@ def run(
         extra_foldseek_params=extra_foldseek_params,
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
-        custom_annotations=custom_annotations
+        custom_annotations=custom_annotations,
+        has_duplicate_locus=has_duplicate_locus
     )
 
     #####
@@ -605,11 +609,11 @@ def proteins(
         model_name,
         checkpoint_path,
         batch_size,
-        proteins_flag=False,
         save_per_residue_embeddings=save_per_residue_embeddings,
         save_per_protein_embeddings=save_per_protein_embeddings,
         threads=threads,
         mask_threshold=mask_threshold,
+        has_duplicate_locus=False
     )
 
     # baktfold compare
@@ -635,7 +639,8 @@ def proteins(
         extra_foldseek_params=extra_foldseek_params,
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
-        custom_annotations=custom_annotations
+        custom_annotations=custom_annotations,
+        has_duplicate_locus=False
     )
 
     #####
@@ -741,7 +746,7 @@ def predict(
         "--save-per-residue_embeddings": save_per_residue_embeddings,
         "--save-per-protein-embeddings": save_per_protein_embeddings,
         "--mask-threshold": mask_threshold,
-        "--all-proteins": all_proteins
+        "--all-proteins": all_proteins,
 
     }
 
@@ -760,7 +765,7 @@ def predict(
     ###
 
     fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
-    data, features = parse_json_input(input, fasta_aa, all_proteins)
+    data, features, has_duplicate_locus = parse_json_input(input, fasta_aa, all_proteins)
 
     ###
     # split features in hypotheticals and non hypotheticals
@@ -785,8 +790,13 @@ def predict(
 
     # put the CDS AA in a simple dictionary for ProstT5 code
     cds_dict = {}
-    for feat in hypotheticals:
-        cds_dict[feat['locus']] = feat['aa']
+    if has_duplicate_locus:
+        for feat in hypotheticals:
+            cds_dict[feat['id']] = feat['aa']
+    
+    else:
+        for feat in hypotheticals:
+            cds_dict[feat['locus']] = feat['aa']
 
 
     # add a function to add 3Di to cds_dict
@@ -812,6 +822,7 @@ def predict(
         save_per_protein_embeddings=save_per_protein_embeddings,
         threads=threads,
         mask_threshold=mask_threshold,
+        has_duplicate_locus=has_duplicate_locus
     )
 
     # end baktfold
@@ -933,7 +944,7 @@ def compare(
     ###
 
     fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
-    data, features = parse_json_input(input, fasta_aa, all_proteins)
+    data, features, has_duplicate_locus = parse_json_input(input, fasta_aa, all_proteins)
 
     ###
     # split features in hypotheticals and non hypotheticals
@@ -955,8 +966,6 @@ def compare(
         (feat['type'] == bc.FEATURE_CDS and 'hypothetical' not in (feat.get('product') or '').lower())
     ]
 
-
-
     # code to read in and append 3Di from ProstT5 to the dictionary for the json output
 
     if not structures:
@@ -964,7 +973,10 @@ def compare(
         predictions = {record.id: str(record.seq) for record in SeqIO.parse(threedi_aa, "fasta")}
         
         for feat in hypotheticals:
-            seq_id = feat["locus"]
+            if has_duplicate_locus:
+                seq_id = feat["id"]
+            else:
+                seq_id = feat["locus"]
             threedi_seq = predictions.get(seq_id)
             feat["3di"] = threedi_seq if threedi_seq else ""
 
@@ -986,7 +998,8 @@ def compare(
         extra_foldseek_params=extra_foldseek_params,
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
-        custom_annotations=custom_annotations
+        custom_annotations=custom_annotations,
+        has_duplicate_locus=has_duplicate_locus
     )
 
 
@@ -1157,11 +1170,11 @@ def proteins_predict(
         model_name,
         checkpoint_path,
         batch_size,
-        proteins_flag=False,
         save_per_residue_embeddings=save_per_residue_embeddings,
         save_per_protein_embeddings=save_per_protein_embeddings,
         threads=threads,
         mask_threshold=mask_threshold,
+        has_duplicate_locus=False
     )
 
     # end baktfold
@@ -1305,7 +1318,8 @@ def proteins_compare(
         extra_foldseek_params=extra_foldseek_params,
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
-        custom_annotations=custom_annotations
+        custom_annotations=custom_annotations,
+        has_duplicate_locus=False
     )
 
     #####

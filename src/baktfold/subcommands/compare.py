@@ -37,7 +37,8 @@ def subcommand_compare(
     extra_foldseek_params: str,
     custom_db: str,
     foldseek_gpu: bool,
-    custom_annotations: Optional[Path]
+    custom_annotations: Optional[Path],
+    has_duplicate_locus: bool
 ) -> bool:
     """
     Compare 3Di or PDB structures to the baktfold DB
@@ -62,7 +63,7 @@ def subcommand_compare(
         custom_db (str): Custom foldseek database
         foldseek_gpu (bool): Use Foldseek-GPU acceleration and ungappedprefilter
         custom_annotations (Optional[Path]): Path to the tsv containing the custom_db annotations, 2 columns 
-
+        has_duplicate_locus (bool): If same locus tag has multiple annots (can happen in some euks)
     Returns:
         bool: True if sub-databases are created successfully, False otherwise.
     """
@@ -111,7 +112,10 @@ def subcommand_compare(
 
         with open(fasta_aa, "w+") as out_f:
             for entry in hypotheticals:
-                header = f">{entry['locus']}\n"
+                if has_duplicate_locus:
+                    header = f">{entry['id']}\n"
+                else:
+                    header = f">{entry['locus']}\n"
                 seq = f"{entry['aa']}\n"
                 out_f.write(header)
                 out_f.write(seq)
@@ -416,16 +420,16 @@ def subcommand_compare(
     # lookup
     ####
 
-    if proteins_flag: # baktfold proteins
+    if proteins_flag: # baktfold proteins 
 
         # note aas passed as hypotheticals to the overall function - so in and out as aas
 
-        aas = pstc.parse(hypotheticals, swissprot_df, 'swissprot')
-        aas = pstc.parse(aas, afdbclusters_df, 'afdb')
-        aas = pstc.parse(aas, pdb_df, 'pdb')
-        aas = pstc.parse(aas, cath_df, 'cath')
+        aas = pstc.parse(hypotheticals, swissprot_df, 'swissprot', has_duplicate_locus=False)
+        aas = pstc.parse(aas, afdbclusters_df, 'afdb', has_duplicate_locus=False)
+        aas = pstc.parse(aas, pdb_df, 'pdb', has_duplicate_locus=False)
+        aas = pstc.parse(aas, cath_df, 'cath', has_duplicate_locus=False)
         if custom_db:
-            aas = pstc.parse(aas, custom_df, 'custom_db')
+            aas = pstc.parse(aas, custom_df, 'custom_db', has_duplicate_locus=False)
 
         # get the lookup descriptions for each of them
         # this requires the DB
@@ -441,12 +445,12 @@ def subcommand_compare(
     else: # baktfold run
 
         # add the Swissprot and AFDB and PDB tophits to the json
-        hypotheticals = pstc.parse(hypotheticals, swissprot_df, 'swissprot')
-        hypotheticals = pstc.parse(hypotheticals, afdbclusters_df, 'afdb')
-        hypotheticals = pstc.parse(hypotheticals, pdb_df, 'pdb')
-        hypotheticals = pstc.parse(hypotheticals, cath_df, 'cath')
+        hypotheticals = pstc.parse(hypotheticals, swissprot_df, 'swissprot', has_duplicate_locus)
+        hypotheticals = pstc.parse(hypotheticals, afdbclusters_df, 'afdb', has_duplicate_locus)
+        hypotheticals = pstc.parse(hypotheticals, pdb_df, 'pdb', has_duplicate_locus)
+        hypotheticals = pstc.parse(hypotheticals, cath_df, 'cath', has_duplicate_locus)
         if custom_db:
-            hypotheticals = pstc.parse(hypotheticals, custom_df, 'custom_db')
+            hypotheticals = pstc.parse(hypotheticals, custom_df, 'custom_db', has_duplicate_locus)
 
         # get the lookup descriptions for each of them
         # hypotheticals = pstc.lookup(hypotheticals, Path(database), custom_annotations)

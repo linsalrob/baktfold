@@ -58,14 +58,33 @@ def parse_json_input(input_path, faa_path, all_proteins):
         hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat]
 
 
-    # write hypothetical proteins to file
-    with faa_path.open('wt') as fh:
-        for feat in hypotheticals:
-            fh.write(f">{feat['locus']}\n{feat['aa']}\n")
+    # check if dupe locus tags (euks can have multiple CDS same locus tag e.g. Cladocopium goreaui CAMXCT020000001.1)
+    seen_loci = set()
+    has_duplicate_locus = False
+
+    for feat in hypotheticals:
+        locus = feat['locus']
+        if locus in seen_loci:
+            has_duplicate_locus = True
+            break
+        seen_loci.add(locus)
+
+    if has_duplicate_locus:
+        # write hypothetical proteins to file with id (not locus) as guaranteed exists and unique
+        with faa_path.open('wt') as fh:
+            for feat in hypotheticals:
+                fh.write(f">{feat['id']}\n{feat['aa']}\n")
+
+    else:
+        # write hypothetical proteins to file - almost always
+        with faa_path.open('wt') as fh:
+            for feat in hypotheticals:
+                fh.write(f">{feat['locus']}\n{feat['aa']}\n")
+
 
     logger.info('Parsing complete')
 
-    return data, features
+    return data, features, has_duplicate_locus
 
 
     

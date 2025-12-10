@@ -194,7 +194,8 @@ def write_predictions(
     hypotheticals: Dict,
     predictions: Dict[str, Tuple[List[str], Any, Any]],
     out_path: Path,
-    mask_threshold: float
+    mask_threshold: float,
+    has_duplicate_locus: bool
 ) -> None:
     """
     Write predictions to an output file.
@@ -252,7 +253,10 @@ def write_predictions(
 
     with open(out_path, "w+") as out_f:
         for feat in hypotheticals:
-            seq_id = feat["locus"]
+            if has_duplicate_locus:
+                seq_id = feat["id"]
+            else:
+                seq_id = feat["locus"]
             pred = predictions.get(seq_id)  # predictions = {seq_id: (yhats, _, _)} or None
 
             if pred is not None:
@@ -380,11 +384,11 @@ def get_embeddings(
     max_batch: int = 100,
     cpu: bool = False,
     output_probs: bool = True,
-    proteins_flag: bool = False,
     save_per_residue_embeddings: bool = False,
     save_per_protein_embeddings: bool = False,
     threads: int = 1,
-    mask_threshold: float = 0
+    mask_threshold: float = 0,
+    has_duplicate_locus: bool = False
 ) -> bool:
     """
     Generate embeddings and predictions for protein sequences using ProstT5 encoder & CNN prediction head.
@@ -405,12 +409,11 @@ def get_embeddings(
         max_batch (int, optional): Maximum batch size. Defaults to 100.
         cpu (bool, optional): Whether to use CPU for processing. Defaults to False.
         output_probs (bool, optional): Whether to output probabilities. Defaults to True.
-        proteins_flag (bool, optional): Whether the sequences are proteins. Defaults to False.
         save_embeddings (bool, optional): Whether to save embeddings to h5 file. Defaults to False. Will  save per residue embeddings
         per_protein_embeddings (bool, optional): Whether to save per protein mean embeddings to h5 file. Defaults to False.
         threads (int): number of cpu threads
         mask_threshold (float) : 0-100 - below this ProstT5 confidence threshold, these residues are masked
-
+        has_duplicate_locus (bool) : some euks have dupe locus tags
 
     Returns:
         bool: True if embeddings and predictions are generated successfully.
@@ -628,7 +631,7 @@ def get_embeddings(
             tsv_writer = csv.writer(file, delimiter="\t")
             tsv_writer.writerows(data_as_list_of_lists)
 
-    write_predictions(hypotheticals, predictions, output_3di,  mask_threshold)
+    write_predictions(hypotheticals, predictions, output_3di,  mask_threshold, has_duplicate_locus)
 
     if save_per_residue_embeddings:
         write_embeddings(embeddings_per_residue, output_h5_per_residue)
