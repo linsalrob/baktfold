@@ -817,7 +817,6 @@ def predict(
         model_name,
         checkpoint_path,
         batch_size,
-        proteins_flag=False,
         save_per_residue_embeddings=save_per_residue_embeddings,
         save_per_protein_embeddings=save_per_protein_embeddings,
         threads=threads,

@@ -66,6 +66,8 @@ def parse_json_input(input_path, faa_path, all_proteins):
         locus = feat['locus']
         if locus in seen_loci:
             has_duplicate_locus = True
+            logger.warning("Multiple CDS per locus tag were detected in your input JSON.")
+            logger.warning("CDS id (which is unique) rather than locus tag will be used for ProstT5+Foldseek searches.")
             break
         seen_loci.add(locus)
 
