@@ -233,15 +233,17 @@ def get_type_rank(f):
 
     return base_order.get(t, 99)   # non-protein features become 99
 
+
 def sort_euk_feature_key(f):
-    """Key function for sorting eukaryotic features."""
     start = f.get('start', float('inf'))
-    locus = f.get('locus', '')
+    stop = f.get('stop', float('inf'))
+    locus = f.get('locus')
     type_rank = get_type_rank(f)
 
-    # If feature is gene-related, sort by locus + type rank within locus
-    if type_rank != 99 and locus:
-        return (locus, type_rank, start)
+    if locus and type_rank != 99:
+        # Within a locus → sort by type rank second and stop last (if multiple CDS e.g.)
+        return (start, 0, locus, type_rank, stop)
     else:
-        # For everything else, sort globally by start
-        return ('', 99, start)
+        # Non-locus or non-gene features → sort only by start
+        return (start, 1, '', 99, stop)
+
