@@ -326,11 +326,7 @@ def run(
     check_dependencies()
 
     # check the database is installed and return it
-    #database = validate_db(database, DB_DIR, foldseek_gpu)
-
-    # validate input
-    #fasta_flag, gb_dict, method = validate_input(input, threads)
-
+    database = validate_db(database, DB_DIR, foldseek_gpu)
 
     ###
     # parse the json output and save hypotheticals as AA FASTA
@@ -554,7 +550,7 @@ def proteins(
         "--cpu": cpu,
         "--omit-probs": omit_probs,
         "--max-seqs": max_seqs,
-        "--save-per-residue_embeddings": save_per_residue_embeddings,
+        "--save-per-residue-embeddings": save_per_residue_embeddings,
         "--save-per-protein-embeddings": save_per_protein_embeddings,
         "--ultra-sensitive": ultra_sensitive,
         "--mask-threshold": mask_threshold,
@@ -571,7 +567,7 @@ def proteins(
     check_dependencies()
 
     # check the database is installed and return it
-    #database = validate_db(database, DB_DIR, foldseek_gpu)
+    database = validate_db(database, DB_DIR, foldseek_gpu)
 
 
     ###
@@ -737,7 +733,7 @@ def predict(
         "--batch-size": batch_size,
         "--cpu": cpu,
         "--omit-probs": omit_probs,
-        "--save-per-residue_embeddings": save_per_residue_embeddings,
+        "--save-per-residue-embeddings": save_per_residue_embeddings,
         "--save-per-protein-embeddings": save_per_protein_embeddings,
         "--mask-threshold": mask_threshold,
         "--all-proteins": all_proteins,
@@ -751,7 +747,7 @@ def predict(
     check_dependencies()
 
     # check the database is installed and return it
-    #database = validate_db(database, DB_DIR, foldseek_gpu)
+    database = validate_db(database, DB_DIR, foldseek_gpu=False) # dont need the foldseek gpu here as not an inout option
 
 
     ###
@@ -917,7 +913,7 @@ def compare(
     check_dependencies()
 
     # check the database is installed and return it
-    #database = validate_db(database, DB_DIR, foldseek_gpu)
+    database = validate_db(database, DB_DIR, foldseek_gpu)
 
     # bool for the subcommand
     if (structure_dir):
@@ -1126,7 +1122,7 @@ def proteins_predict(
     check_dependencies()
 
     # check the database is installed and return it
-    #database = validate_db(database, DB_DIR, foldseek_gpu)
+    database = validate_db(database, DB_DIR, foldseek_gpu=False) # dont need foldseek_gpu
 
 
     ###

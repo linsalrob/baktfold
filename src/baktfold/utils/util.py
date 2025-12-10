@@ -221,7 +221,7 @@ def get_type_rank(f):
     base_order = {
         'gene': 0,
         'mRNA': 1,
-        'CDS': 3,
+        'cds': 3,
         'tRNA': 6
     }
 

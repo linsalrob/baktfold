@@ -89,6 +89,9 @@ def convert_cds_feature(feature, seq_record, translation_table, id):
     note = feature.qualifiers.get("note", [None])[0]
     locus = locus_tag
 
+    # pseudo
+    pseudo = feature.qualifiers.get("pseudo", [None])[0]
+
     protein_id = feature.qualifiers.get("protein_id", [None])[0]
 
     # ----------- Extract nucleotides -----------
@@ -155,6 +158,9 @@ def convert_cds_feature(feature, seq_record, translation_table, id):
         "locus": locus,
         "protein_id": protein_id
     }
+
+    if pseudo:
+        bakta_cds["pseudo"] = True
 
     if hypothetical:
         bakta_cds["hypothetical"] = True
@@ -292,6 +298,8 @@ def convert_gene_feature(feature, rec, id):
 
     locus_tag = qualifiers.get("locus_tag", [None])[0]
     gene = qualifiers.get("gene", [None])[0]
+
+    pseudo = qualifiers.get("pseudo", [None])[0]
     
 
     gene_entry = {
@@ -305,6 +313,9 @@ def convert_gene_feature(feature, rec, id):
         "id": id,
         "locus": locus_tag
     }
+
+    if pseudo:
+        gene_entry["pseudo"] = True
     
     return gene_entry
 
@@ -365,6 +376,7 @@ def convert_mrna_feature(feature, rec, id):
     locus_tag = qualifiers.get("locus_tag", [None])[0]
     # only on some
     standard_name = qualifiers.get("standard_name", [None])[0]
+    pseudo = qualifiers.get("pseudo", [None])[0]
 
 
     mrna_entry = {
@@ -384,6 +396,9 @@ def convert_mrna_feature(feature, rec, id):
 
     if standard_name:
         mrna_entry["standard_name"] = standard_name
+
+    if pseudo:
+        mrna_entry["pseudo"] = True
 
     return mrna_entry
 

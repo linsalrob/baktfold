@@ -445,6 +445,20 @@ def get_embeddings(
 
     fail_ids = []
 
+    # for k, v in cds_dict.items():
+    #     #logger.info(f"key: {k}, value: {v}")
+    #     length = len(v)
+    #     if length == 0:
+    #         logger.info(f"key: {k}, value: {v}")
+
+    # Remove entries where the value list has length 0
+    # safe to just remove them - they won't be made into the FS database later on
+
+    for k, v in list(cds_dict.items()):
+        if len(v) == 0:
+            logger.info(f"Skipping empty CDS entry as it has no amino acid string associated (likely pseudo): key={k}")
+            del cds_dict[k]
+
     # sort sequences by length to trigger OOM at the beginning
     cds_dict = dict(
         sorted(cds_dict.items(), key=lambda kv: len(kv[1][0]), reverse=True)

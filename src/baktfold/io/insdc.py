@@ -140,7 +140,10 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka, 
             if('locus' in feature):
                 qualifiers['locus_tag'] = feature['locus']
             if('standard_name' in feature): # euk mrnas
-                qualifiers['standard_name'] = feature['standard_name']            
+                qualifiers['standard_name'] = feature['standard_name'] 
+            if euk:
+                if('pseudo' in feature): # euk genes, mrna, CDS pseudo
+                    qualifiers['pseudo'] = ['']        
 
             accompanying_features=[]
             if(feature['type'] == bc.FEATURE_GAP):
