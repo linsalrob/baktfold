@@ -180,7 +180,7 @@ def install_database(db_dir: Path, foldseek_gpu: bool, threads: int) -> None:
 
         try: 
             download(db_url, tarball_path, logdir, threads)
-        except IOError:
+        except:
             logger.warning(
                 f"Could not download file from Zenodo using aria2c! url={db_url}, path={tarball_path}"
             )
@@ -269,7 +269,7 @@ def download_requests(db_url: str, tarball_path: Path):
                 for data in resp.iter_content(chunk_size=1024 * 1024):
                     fh_out.write(data)
                     bar(count=len(data))
-    except IOError:
+    except:
         logger.error(
             f"ERROR: Could not download file from Zenodo! url={db_url}, path={tarball_path}"
         )
