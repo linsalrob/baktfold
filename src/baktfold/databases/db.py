@@ -178,7 +178,15 @@ def install_database(db_dir: Path, foldseek_gpu: bool, threads: int) -> None:
         tarball_path = Path(f"{db_dir}/{tarball}")
         logdir = Path(db_dir) / "logdir"
 
-        download(db_url, tarball_path, logdir, threads)
+        try: 
+            download(db_url, tarball_path, logdir, threads)
+        except IOError:
+            logger.warning(
+                f"Could not download file from Zenodo using aria2c! url={db_url}, path={tarball_path}"
+            )
+            logger.warning(f"Trying now with requests")
+            download_requests(db_url, tarball_path)
+
 
         md5_sum = calc_md5_sum(tarball_path)
 
@@ -209,30 +217,6 @@ def install_database(db_dir: Path, foldseek_gpu: bool, threads: int) -> None:
 lots of this code from the marvellous bakta https://github.com/oschwengers/bakta, db.py specifically
 """
 
-
-# def download(db_url: str, tarball_path: Path) -> None:
-#     """
-#     Download the database from the given URL.
-
-#     Args:
-#         db_url (str): The URL of the database.
-#         tarball_path (Path): The path where the downloaded tarball should be saved.
-#     """
-#     try:
-#         with tarball_path.open("wb") as fh_out, requests.get(
-#             db_url, stream=True
-#         ) as resp:
-#             total_length = resp.headers.get("content-length")
-#             if total_length is not None:  # content length header is set
-#                 total_length = int(total_length)
-#             with alive_bar(total=total_length, scale="SI") as bar:
-#                 for data in resp.iter_content(chunk_size=1024 * 1024):
-#                     fh_out.write(data)
-#                     bar(count=len(data))
-#     except IOError:
-#         logger.error(
-#             f"ERROR: Could not download file from Zenodo! url={db_url}, path={tarball_path}"
-#         )
 
 """
 aria2c bottlenecked by Zenodo but still faster than wget
@@ -309,14 +293,13 @@ def download_zenodo_prostT5(model_dir, logdir, threads):
     tarball_path = Path(f"{model_dir}/{tarball}")
 
 
-
     try: 
         download(db_url, tarball_path, logdir, threads)
     except IOError:
         logger.warning(
             f"Could not download file from Zenodo using aria2c! url={db_url}, path={tarball_path}"
         )
-        logger.warning(f"Trying now with wget")
+        logger.warning(f"Trying now with requests")
         download_requests(db_url, tarball_path)
 
     md5_sum = calc_md5_sum(tarball_path)
