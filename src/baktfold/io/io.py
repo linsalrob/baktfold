@@ -60,7 +60,7 @@ def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequen
     else:
         header_columns = ['Locus', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH']
         if has_duplicate_locus:
-            header_columns = ['Locus', 'ID', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH', 'Custom_DB']
+            header_columns = ['Locus', 'ID', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH']
     logger.info(f'Exporting annotations (TSV) to: {annotations_path}')
 
     selected_features = []
@@ -117,7 +117,7 @@ def write_bakta_proteins_outputs(aas: Sequence[dict], output: Path, prefix: str,
     else:
         header_columns = ['ID', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH']
     logger.info(f'Exporting annotations (TSV) to: {annotations_path}')
-    tsv.write_protein_features(aas, header_columns, annotations_path, custom_db)
+    tsv.write_protein_features(aas, header_columns, annotations_path, custom_db, has_duplicate_locus=False)
 
 
     # do i combine the tophits tsvs, sort by column, add a column for db and put out as one tsv
