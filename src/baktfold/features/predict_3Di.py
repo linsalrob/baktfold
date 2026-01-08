@@ -472,14 +472,10 @@ def get_embeddings(
             )
             fail_ids.append(k)
 
-    
 
-    original_keys = list(seq_dict.keys())
+    original_keys = list(cds_dict.keys())
         # --- sort once ---
-
     seq_dict.sort(key=lambda x: x[2], reverse=True)
-
-    batch = list()
 
     batch = list()
     for seq_idx, (pdb_id, seq, slen) in enumerate(tqdm(seq_dict, desc=f"Predicting 3Di"), 1):
