@@ -455,17 +455,34 @@ def get_embeddings(
             del cds_dict[k]
 
     # sort sequences by length
+    seq_dict = []
+    fail_ids = []
+
+    for k, seq in cds_dict.items():
+        if isinstance(seq, str) and seq:
+            clean_seq = (
+                seq.replace("U", "X")
+                .replace("Z", "X")
+                .replace("O", "X")
+            )
+            seq_dict.append((k, clean_seq, len(clean_seq))) # in the correct format for the remainder of the code
+        else:
+            logger.warning(
+                f"Protein header {k} is corrupt. It will be saved in fails.tsv"
+            )
+            fail_ids.append(k)
 
     
 
-    original_keys = list(cds_dict.keys())
+    original_keys = list(seq_dict.keys())
         # --- sort once ---
-    cds_dict.sort(key=lambda x: x[1], reverse=True)
+
+    seq_dict.sort(key=lambda x: x[2], reverse=True)
 
     batch = list()
 
     batch = list()
-    for seq_idx, (pdb_id, seq) in enumerate(tqdm(cds_dict, desc=f"Predicting 3Di"), 1):
+    for seq_idx, (pdb_id, seq, slen) in enumerate(tqdm(seq_dict, desc=f"Predicting 3Di"), 1):
 
         # replace non-standard AAs
         seq = seq.replace("U", "X").replace("Z", "X").replace("O", "X")
@@ -479,7 +496,7 @@ def get_embeddings(
         if (
             len(batch) >= max_batch
             or n_res_batch >= max_residues
-            or seq_idx == len(cds_dict)
+            or seq_idx == len(seq_dict)
             or seq_len > max_seq_len
         ):
             pdb_ids, seqs, seq_lens = zip(*batch)
