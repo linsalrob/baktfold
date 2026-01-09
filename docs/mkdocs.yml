@@ -18,12 +18,14 @@ theme:
     - content.action.edit
 
 plugins:
-- search
-- mkdocstrings:
-    handlers:
-      python:
-        options:
-          docstring_style: "google"
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: "google"
+  - mkdocs-autorefs:
+      link_titles: auto   # required attribute
 
 markdown_extensions:
   - pymdownx.highlight:
