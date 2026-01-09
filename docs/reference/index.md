@@ -1,25 +1,3 @@
-::: prokka_gbk_to_json
-
-::: eukaryotic_gbk_to_json
-
-::: tests.conftest
-
-::: tests.test_integration
-
-::: db-scripts.filter_xml
-
-::: db-scripts.init-afdbclusters
-
-::: db-scripts.init-cath
-
-::: db-scripts.init-db
-
-::: db-scripts.optimize-db
-
-::: db-scripts.init-pdb
-
-::: db-scripts.init-swissprot
-
 ::: src.baktfold.databases.db
 
 ::: src.baktfold.subcommands.predict

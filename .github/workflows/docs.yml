@@ -40,5 +40,5 @@ jobs:
 
       # 5. Build and deploy to GitHub Pages
       - name: Deploy MkDocs
-        run: PYTHONPATH=src mkdocs gh-deploy --force
+        run: mkdocs gh-deploy --force
 
