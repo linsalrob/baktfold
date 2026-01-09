@@ -41,3 +41,4 @@ jobs:
       # 5. Build and deploy to GitHub Pages
       - name: Deploy MkDocs
         run: mkdocs gh-deploy --force
+        working-directory: docs
