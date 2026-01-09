@@ -194,7 +194,8 @@ def write_predictions(
     hypotheticals: Dict,
     predictions: Dict[str, Tuple[List[str], Any, Any]],
     out_path: Path,
-    mask_threshold: float
+    mask_threshold: float,
+    has_duplicate_locus: bool
 ) -> None:
     """
     Write predictions to an output file.
@@ -252,7 +253,10 @@ def write_predictions(
 
     with open(out_path, "w+") as out_f:
         for feat in hypotheticals:
-            seq_id = feat["locus"]
+            if has_duplicate_locus:
+                seq_id = feat["id"]
+            else:
+                seq_id = feat["locus"]
             pred = predictions.get(seq_id)  # predictions = {seq_id: (yhats, _, _)} or None
 
             if pred is not None:
@@ -375,16 +379,16 @@ def get_embeddings(
     output_h5_per_residue: Path,
     output_h5_per_protein: Path,
     half_precision: bool,
-    max_residues: int = 3000,
-    max_seq_len: int = 1000,
-    max_batch: int = 100,
+    max_residues: int = 100000,
+    max_seq_len: int = 30000,
+    max_batch: int = 10000,
     cpu: bool = False,
     output_probs: bool = True,
-    proteins_flag: bool = False,
     save_per_residue_embeddings: bool = False,
     save_per_protein_embeddings: bool = False,
     threads: int = 1,
-    mask_threshold: float = 0
+    mask_threshold: float = 0,
+    has_duplicate_locus: bool = False
 ) -> bool:
     """
     Generate embeddings and predictions for protein sequences using ProstT5 encoder & CNN prediction head.
@@ -405,23 +409,26 @@ def get_embeddings(
         max_batch (int, optional): Maximum batch size. Defaults to 100.
         cpu (bool, optional): Whether to use CPU for processing. Defaults to False.
         output_probs (bool, optional): Whether to output probabilities. Defaults to True.
-        proteins_flag (bool, optional): Whether the sequences are proteins. Defaults to False.
         save_embeddings (bool, optional): Whether to save embeddings to h5 file. Defaults to False. Will  save per residue embeddings
         per_protein_embeddings (bool, optional): Whether to save per protein mean embeddings to h5 file. Defaults to False.
         threads (int): number of cpu threads
         mask_threshold (float) : 0-100 - below this ProstT5 confidence threshold, these residues are masked
-
+        has_duplicate_locus (bool) : some euks have dupe locus tags
 
     Returns:
         bool: True if embeddings and predictions are generated successfully.
     """
 
     predictions = {}
+    batch_predictions = {}
 
     if save_per_residue_embeddings:
         embeddings_per_residue = {}
+        batch_embeddings_per_residue = {}
     if save_per_protein_embeddings:
         embeddings_per_protein = {}
+        batch_embeddings_per_protein = {}
+
 
     prostt5_prefix = "<AA2fold>"
 
@@ -442,14 +449,37 @@ def get_embeddings(
 
     fail_ids = []
 
-    # sort sequences by length to trigger OOM at the beginning
-    cds_dict = dict(
-        sorted(cds_dict.items(), key=lambda kv: len(kv[1][0]), reverse=True)
-    )
+    for k, v in list(cds_dict.items()):
+        if len(v) == 0:
+            logger.info(f"Skipping empty CDS entry as it has no amino acid string associated (likely pseudo): key={k}")
+            del cds_dict[k]
+
+    # sort sequences by length
+    seq_dict = []
+    fail_ids = []
+
+    for k, seq in cds_dict.items():
+        if isinstance(seq, str) and seq:
+            clean_seq = (
+                seq.replace("U", "X")
+                .replace("Z", "X")
+                .replace("O", "X")
+            )
+            seq_dict.append((k, clean_seq, len(clean_seq))) # in the correct format for the remainder of the code
+        else:
+            logger.warning(
+                f"Protein header {k} is corrupt. It will be saved in fails.tsv"
+            )
+            fail_ids.append(k)
+
+
+    original_keys = list(cds_dict.keys())
+        # --- sort once ---
+    seq_dict.sort(key=lambda x: x[2], reverse=True)
 
     batch = list()
-    for seq_idx, (pdb_id, seq) in tqdm(enumerate(cds_dict.items(), 1), total=len(cds_dict), desc=f"Predicting 3Di"):
-    # for seq_idx, (pdb_id, seq) in enumerate(cds_dict.items(), 1):
+    for seq_idx, (pdb_id, seq, slen) in enumerate(tqdm(seq_dict, desc=f"Predicting 3Di"), 1):
+
         # replace non-standard AAs
         seq = seq.replace("U", "X").replace("Z", "X").replace("O", "X")
         seq_len = len(seq)
@@ -462,7 +492,7 @@ def get_embeddings(
         if (
             len(batch) >= max_batch
             or n_res_batch >= max_residues
-            or seq_idx == len(cds_dict)
+            or seq_idx == len(seq_dict)
             or seq_len > max_seq_len
         ):
             pdb_ids, seqs, seq_lens = zip(*batch)
@@ -493,7 +523,6 @@ def get_embeddings(
                     fail_ids.append(id)
                 continue
 
-            
 
             # ProtT5 appends a special tokens at the end of each sequence
             # Mask this also out during inference while taking into account the prostt5 prefix
@@ -560,12 +589,12 @@ def get_embeddings(
                             ]
 
                             if save_per_residue_embeddings:
-                                embeddings_per_residue[identifier] = (
+                                batch_embeddings_per_residue[identifier] = (
                                     emb.detach().cpu().numpy().squeeze()
                                 )
 
                             if save_per_protein_embeddings:
-                                embeddings_per_protein[identifier] = (
+                                batch_embeddings_per_protein[identifier] = (
                                     emb.mean(dim=0).detach().cpu().numpy().squeeze()
                                 )
 
@@ -584,16 +613,16 @@ def get_embeddings(
 
                     if output_probs:  # if you want the per-residue probs
                         all_prob = probabilities[batch_idx, :, 0:s_len]
-                        predictions[identifier] = (
+                        batch_predictions[identifier] = (
                             pred,
                             mean_prob,
                             all_prob,
                         )
                     else:
-                        predictions[identifier] = (pred, mean_prob, None)
+                        batch_predictions[identifier] = (pred, mean_prob, None)
 
                     try:
-                        len(predictions[identifier][0])
+                        len(batch_predictions[identifier][0])
                     except:
                         logger.warning(
                             f"{identifier} prediction has length 0"
@@ -601,10 +630,24 @@ def get_embeddings(
                         fail_ids.append(identifier)
                         continue
 
-                    if s_len != len(predictions[identifier][0]):
+                    if s_len != len(batch_predictions[identifier][0]):
                         logger.warning(
-                            f"Length mismatch for {identifier}: is:{len(predictions[identifier][0])} vs should:{s_len}"
+                            f"Length mismatch for {identifier}: is:{len(batch_predictions[identifier][0])} vs should:{s_len}"
                         )
+
+                    for k in original_keys:
+                        if k in batch_predictions:
+                            predictions[k] = batch_predictions[k]
+                
+                    if save_per_residue_embeddings:
+                        for k in original_keys:
+                            if k in batch_predictions:
+                                embeddings_per_residue[k] = batch_embeddings_per_residue[k]
+
+                    if save_per_protein_embeddings:
+                        for k in original_keys:
+                            if k in batch_predictions:
+                                embeddings_per_protein[k] = batch_embeddings_per_protein[k]
 
             except IndexError:
                 logger.warning(
@@ -628,7 +671,7 @@ def get_embeddings(
             tsv_writer = csv.writer(file, delimiter="\t")
             tsv_writer.writerows(data_as_list_of_lists)
 
-    write_predictions(hypotheticals, predictions, output_3di,  mask_threshold)
+    write_predictions(hypotheticals, predictions, output_3di,  mask_threshold, has_duplicate_locus)
 
     if save_per_residue_embeddings:
         write_embeddings(embeddings_per_residue, output_h5_per_residue)

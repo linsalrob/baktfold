@@ -13,8 +13,12 @@ from collections import defaultdict
 import csv
 
 
-def parse(features: Sequence[dict], foldseek_df: pd.DataFrame, db_name: str = 'swissprot') -> None:
-    """Update CDS in place with PSTC hits from foldseek_df if they pass filters."""
+def parse(features: Sequence[dict], foldseek_df: pd.DataFrame, db_name: str = 'swissprot', has_duplicate_locus: bool = False) -> None:
+    """Update CDS in place with PSTC hits from foldseek_df if they pass filters.
+    
+    has_duplicate_locus - some euks have multiple CDS per locus tag
+
+    """
 
     # Convert foldseek_df to a lookup table keyed by query ID
     foldseek_hits = {row['query']: row for _, row in foldseek_df.iterrows()}
@@ -28,7 +32,11 @@ def parse(features: Sequence[dict], foldseek_df: pd.DataFrame, db_name: str = 's
 
 
     for cds in features:
-        aa_identifier = cds.get('locus')
+        if has_duplicate_locus:
+            aa_identifier = cds.get('id')
+        else:
+            aa_identifier = cds.get('locus')
+
         if aa_identifier not in foldseek_hits:
             continue  # no hits, skip
 

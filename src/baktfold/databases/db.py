@@ -178,7 +178,15 @@ def install_database(db_dir: Path, foldseek_gpu: bool, threads: int) -> None:
         tarball_path = Path(f"{db_dir}/{tarball}")
         logdir = Path(db_dir) / "logdir"
 
-        download(db_url, tarball_path, logdir, threads)
+        try: 
+            download(db_url, tarball_path, logdir, threads)
+        except:
+            logger.warning(
+                f"Could not download file from Zenodo using aria2c! url={db_url}, path={tarball_path}"
+            )
+            logger.warning(f"Trying now with requests")
+            download_requests(db_url, tarball_path)
+
 
         md5_sum = calc_md5_sum(tarball_path)
 
@@ -210,30 +218,6 @@ lots of this code from the marvellous bakta https://github.com/oschwengers/bakta
 """
 
 
-# def download(db_url: str, tarball_path: Path) -> None:
-#     """
-#     Download the database from the given URL.
-
-#     Args:
-#         db_url (str): The URL of the database.
-#         tarball_path (Path): The path where the downloaded tarball should be saved.
-#     """
-#     try:
-#         with tarball_path.open("wb") as fh_out, requests.get(
-#             db_url, stream=True
-#         ) as resp:
-#             total_length = resp.headers.get("content-length")
-#             if total_length is not None:  # content length header is set
-#                 total_length = int(total_length)
-#             with alive_bar(total=total_length, scale="SI") as bar:
-#                 for data in resp.iter_content(chunk_size=1024 * 1024):
-#                     fh_out.write(data)
-#                     bar(count=len(data))
-#     except IOError:
-#         logger.error(
-#             f"ERROR: Could not download file from Zenodo! url={db_url}, path={tarball_path}"
-#         )
-
 """
 aria2c bottlenecked by Zenodo but still faster than wget
 dependency of Foldseek so it is always present
@@ -250,7 +234,13 @@ def download(db_url: str, tarball_path: Path, logdir: Path, threads: int) -> Non
         threads (int): Number of threads for aria2c
     """
 
-    cmd = f"--dir {str(tarball_path.parent)} --out {tarball_path.name} --max-connection-per-server={str(threads)} --allow-overwrite=true  {db_url}"
+    cmd = (
+        f'--dir {tarball_path.parent} '
+        f'--out {tarball_path.name} '
+        f'--max-connection-per-server={threads} '
+        f'--allow-overwrite=true '
+        f'{db_url}'
+    )
 
     download_db = ExternalTool(
         tool="aria2c",
@@ -262,7 +252,27 @@ def download(db_url: str, tarball_path: Path, logdir: Path, threads: int) -> Non
 
     ExternalTool.run_download(download_db)
 
+def download_requests(db_url: str, tarball_path: Path):
 
+    headers = {
+        "User-Agent": f"baktfold/{CURRENT_DB_VERSION} (contact: george.bouras@adelaide.edu.au)"
+    }
+
+    try:
+        with tarball_path.open("wb") as fh_out, requests.get(
+            db_url, stream=True, headers=headers
+        ) as resp:
+            total_length = resp.headers.get("content-length")
+            if total_length is not None:  # content length header is set
+                total_length = int(total_length)
+            with alive_bar(total=total_length, scale="SI") as bar:
+                for data in resp.iter_content(chunk_size=1024 * 1024):
+                    fh_out.write(data)
+                    bar(count=len(data))
+    except:
+        logger.error(
+            f"ERROR: Could not download file from Zenodo! url={db_url}, path={tarball_path}"
+        )
 
 
 def download_zenodo_prostT5(model_dir, logdir, threads):
@@ -282,7 +292,16 @@ def download_zenodo_prostT5(model_dir, logdir, threads):
     tarball = VERSION_DICTIONARY[CURRENT_DB_VERSION]["prostt5_backup_tarball"]
     tarball_path = Path(f"{model_dir}/{tarball}")
 
-    download(db_url, tarball_path, logdir, threads)
+
+    try: 
+        download(db_url, tarball_path, logdir, threads)
+    except IOError:
+        logger.warning(
+            f"Could not download file from Zenodo using aria2c! url={db_url}, path={tarball_path}"
+        )
+        logger.warning(f"Trying now with requests")
+        download_requests(db_url, tarball_path)
+
     md5_sum = calc_md5_sum(tarball_path)
 
     if md5_sum == requiredmd5:
@@ -325,11 +344,6 @@ def check_prostT5_download(model_dir: Path, model_name: str) -> bool:
 
         model_sub_dir = "models--Rostlab--ProstT5_fp16"
         DICT = PROSTT5_MD5_DICTIONARY
-
-    elif model_name == "gbouras13/ProstT5baktfold":
-
-        model_sub_dir = "models--gbouras13--ProstT5baktfold"
-        DICT = PROSTT5_FINETUNE_MD5_DICTIONARY
 
 
     for key in DICT:

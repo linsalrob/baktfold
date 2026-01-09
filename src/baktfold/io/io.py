@@ -19,7 +19,7 @@ def write_foldseek_tophit(tophit_df: pd.DataFrame, pdb_tophit_path: Path):
     tophit_df.to_csv(pdb_tophit_path, sep="\t", index=False)
 
 
-def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequence: Sequence[dict] , output: Path, prefix: str, custom_db: bool):
+def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequence: Sequence[dict] , output: Path, prefix: str, custom_db: bool, euk: bool, has_duplicate_locus: bool):
 
     #logger.info(f'selected features={len(features)}')
 
@@ -29,14 +29,15 @@ def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequen
 
     logger.info('writing GFF3...')
     gff3_path: Path = Path(output) / f"{prefix}.gff3"
-    gff.write_features(data, features_by_sequence, gff3_path)
+    # fix later prokka
+    prokka = False
+    gff.write_features(data, features_by_sequence, gff3_path, prokka, euk)
 
     logger.info('writing INSDC GenBank & EMBL...')
     genbank_path: Path = Path(output) / f"{prefix}.gbff"
     embl_path: Path = Path(output) / f"{prefix}.embl"
-    insdc.write_features(data, features, genbank_path, embl_path)
+    insdc.write_features(data, features, genbank_path, embl_path, euk)
 
-    # add 3Di sequence here I think or debate how to handle this
 
     logger.info('writing genome sequences...')
     fna_path: Path = Path(output) / f"{prefix}.fna"
@@ -54,8 +55,12 @@ def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequen
     annotations_path: Path = Path(output) / f"{prefix}.inference.tsv"
     if custom_db:
         header_columns = ['Locus', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH', 'Custom_DB']
+        if has_duplicate_locus:
+            header_columns = ['Locus', 'ID', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH', 'Custom_DB']
     else:
         header_columns = ['Locus', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH']
+        if has_duplicate_locus:
+            header_columns = ['Locus', 'ID', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH']
     logger.info(f'Exporting annotations (TSV) to: {annotations_path}')
 
     selected_features = []
@@ -67,7 +72,7 @@ def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequen
                 selected_features.append(feat)
 
 
-    tsv.write_protein_features(selected_features, header_columns, annotations_path, custom_db)
+    tsv.write_protein_features(selected_features, header_columns, annotations_path, custom_db, has_duplicate_locus)
     
     
 
@@ -112,7 +117,7 @@ def write_bakta_proteins_outputs(aas: Sequence[dict], output: Path, prefix: str,
     else:
         header_columns = ['ID', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH']
     logger.info(f'Exporting annotations (TSV) to: {annotations_path}')
-    tsv.write_protein_features(aas, header_columns, annotations_path, custom_db)
+    tsv.write_protein_features(aas, header_columns, annotations_path, custom_db, has_duplicate_locus=False)
 
 
     # do i combine the tophits tsvs, sort by column, add a column for db and put out as one tsv

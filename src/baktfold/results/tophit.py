@@ -69,7 +69,7 @@ def get_tophit(
     # in case the foldseek output is empty
     if foldseek_df.empty:
         logger.error(
-            "Foldseek found no hits whatsoever - please check whether your input is really phage-like"
+            "Foldseek found no hits whatsoever - please check whether your input"
         )
 
 

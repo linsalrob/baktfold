@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.0.1'
+__version__ = '0.1.0'
 
 import gzip
 from pathlib import Path
@@ -23,17 +23,16 @@ from baktfold.subcommands.compare import subcommand_compare
 from baktfold.subcommands.predict import subcommand_predict
 from baktfold.utils.constants import DB_DIR, CNN_DIR
 from baktfold.utils.util import (begin_baktfold, clean_up_temporary_files, end_baktfold,
-                              get_version, print_citation)
-from baktfold.utils.validation import (check_dependencies, instantiate_dirs,
-                                    validate_input)
+                              get_version, print_citation, sort_euk_feature_key)
+from baktfold.utils.validation import (check_dependencies, instantiate_dirs,validate_outfile,
+                                    check_genbank_and_prokka)
 
+from baktfold.io.prokka_gbk_to_json import prokka_gbk_to_json
+from baktfold.io.eukaryotic_to_json import eukaryotic_gbk_to_json
 import baktfold.bakta.config as cfg
-import baktfold.io.gff as gff
-import baktfold.io.tsv as tsv
-import baktfold.io.insdc as insdc
-import baktfold.io.fasta as fasta
-import baktfold.io.json as json
 import baktfold.io.io as io
+from baktfold.features.autotune import run_autotune
+from importlib.resources import files
 
 log_fmt = (
     "[<green>{time:YYYY-MM-DD HH:mm:ss}</green>] <level>{level: <8}</level> | "
@@ -101,6 +100,11 @@ predict only options
 def predict_options(func):
     """predict command line args"""
     options = [
+        click.option(
+            "--autotune",
+            is_flag=True,
+            help="Run autotuning to detect and automatically use best batch size for your hardware. Recommended only if you have a large dataset (e.g. thousands of proteins), or else autotuning will add rather than save runtime.",
+        ),
         click.option(
             "--batch-size",
             default=1,
@@ -200,6 +204,11 @@ def compare_options(func):
             "--custom-annotations",
             type=click.Path(),
             help="Custom Foldseek DB annotations, 2 column tsv. Column 1 matches the Foldseek headers, column 2 is the description.",
+        ),
+        click.option(
+            "--euk",
+            is_flag=True,
+            help="Eukaryotic input genome.",
         )
     ]
     for option in reversed(options):
@@ -265,6 +274,7 @@ def run(
     evalue,
     force,
     database,
+    autotune,
     batch_size,
     sensitivity,
     cpu,
@@ -280,6 +290,7 @@ def run(
     custom_annotations,
     foldseek_gpu,
     all_proteins,
+    euk,
     **kwargs,
 ):
     """baktfold predict then comapare all in one - GPU recommended"""
@@ -298,6 +309,7 @@ def run(
         "--prefix": prefix,
         "--evalue": evalue,
         "--database": database,
+        "--autotune": autotune,
         "--batch-size": batch_size,
         "--sensitivity": sensitivity,
         "--keep-tmp-files": keep_tmp_files,
@@ -312,7 +324,8 @@ def run(
         "--custom-db": custom_db,
         "--custom-annotations": custom_annotations,
         "--foldseek-gpu": foldseek_gpu,
-        "--all-proteins": all_proteins
+        "--all-proteins": all_proteins,
+        "--euk": euk
     }
 
     # initial logging etc
@@ -322,18 +335,14 @@ def run(
     check_dependencies()
 
     # check the database is installed and return it
-    #database = validate_db(database, DB_DIR, foldseek_gpu)
-
-    # validate input
-    #fasta_flag, gb_dict, method = validate_input(input, threads)
-
+    database = validate_db(database, DB_DIR, foldseek_gpu)
 
     ###
     # parse the json output and save hypotheticals as AA FASTA
     ###
 
     fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
-    data, features = parse_json_input(input, fasta_aa)
+    data, features, has_duplicate_locus = parse_json_input(input, fasta_aa, all_proteins)
 
     ###
     # split features in hypotheticals and non hypotheticals
@@ -353,13 +362,16 @@ def run(
         non_hypothetical_features = [
         feat for feat in features
         if (feat['type'] != bc.FEATURE_CDS) or 
-        (feat['type'] == bc.FEATURE_CDS and 'hypothetical' not in (feat.get('product') or '').lower())
+        (feat['type'] == bc.FEATURE_CDS and 'hypothetical' not in feat)
     ]
 
     # put the CDS AA in a simple dictionary for ProstT5 code
     cds_dict = {}
     for feat in hypotheticals:
-        cds_dict[feat['locus']] = feat['aa']
+        if has_duplicate_locus:
+            cds_dict[feat['id']] = feat['aa']
+        else:
+            cds_dict[feat['locus']] = feat['aa']
 
 
     # add a function to add 3Di to cds_dict
@@ -368,6 +380,28 @@ def run(
     model_dir = database
     model_name = "Rostlab/ProstT5_fp16"
     checkpoint_path = Path(CNN_DIR) / "cnn_chkpnt" / "model.pt"
+
+
+    if autotune:
+
+        input_path = files("baktfold.features.autotune_data").joinpath("swissprot_5000.fasta.gz")
+
+        step = 20
+        min_batch = 1
+        max_batch = 301
+        sample_seqs = 602
+
+        batch_size = run_autotune(
+            input_path,
+            model_dir,
+            model_name,
+            cpu,
+            threads,
+            step, 
+            min_batch,
+            max_batch, 
+            sample_seqs)
+
 
     # hypotheticals is input to the function as it updates the 3Di feature
 
@@ -382,11 +416,11 @@ def run(
         model_name,
         checkpoint_path,
         batch_size,
-        proteins_flag=False,
         save_per_residue_embeddings=save_per_residue_embeddings,
         save_per_protein_embeddings=save_per_protein_embeddings,
         threads=threads,
         mask_threshold=mask_threshold,
+        has_duplicate_locus=has_duplicate_locus
     )
 
     # baktfold compare
@@ -411,7 +445,8 @@ def run(
         extra_foldseek_params=extra_foldseek_params,
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
-        custom_annotations=custom_annotations
+        custom_annotations=custom_annotations,
+        has_duplicate_locus=has_duplicate_locus
     )
 
     #####
@@ -430,7 +465,6 @@ def run(
     # put back in dictionary
     data['features'] = combined_features_sorted
 
-
     # map features by sequence for io
     features_by_sequence = {seq['id']: [] for seq in data['sequences']}
 
@@ -444,7 +478,10 @@ def run(
     features = []
     for seq in data['sequences']:
         seq_features = features_by_sequence[seq['id']]
-        seq_features.sort(key=lambda k: k['start'])  # sort features by start position
+        if euk: # ensure gene -> mRNA -> CDS ordering for each locus tag
+            seq_features.sort(key=sort_euk_feature_key)
+        else:
+            seq_features.sort(key=lambda k: k['start'])  # sort features by start position
         features.extend(seq_features)
 
     # overwrite feature list with sorted features
@@ -465,7 +502,7 @@ def run(
 
 
     logger.info('writing baktfold outputs')
-    io.write_bakta_outputs(data, features, features_by_sequence, output, prefix, custom_db)
+    io.write_bakta_outputs(data, features, features_by_sequence, output, prefix, custom_db, euk, has_duplicate_locus)
 
     # cleanup the temp files
     if not keep_tmp_files:
@@ -506,6 +543,7 @@ def proteins(
     evalue,
     force,
     database,
+    autotune,
     batch_size,
     sensitivity,
     cpu,
@@ -538,13 +576,14 @@ def proteins(
         "--prefix": prefix,
         "--evalue": evalue,
         "--database": database,
+        "--autotune": autotune,
         "--batch_size": batch_size,
         "--sensitivity": sensitivity,
         "--keep-tmp-files": keep_tmp_files,
         "--cpu": cpu,
         "--omit-probs": omit_probs,
         "--max-seqs": max_seqs,
-        "--save-per-residue_embeddings": save_per_residue_embeddings,
+        "--save-per-residue-embeddings": save_per_residue_embeddings,
         "--save-per-protein-embeddings": save_per_protein_embeddings,
         "--ultra-sensitive": ultra_sensitive,
         "--mask-threshold": mask_threshold,
@@ -561,7 +600,7 @@ def proteins(
     check_dependencies()
 
     # check the database is installed and return it
-    #database = validate_db(database, DB_DIR, foldseek_gpu)
+    database = validate_db(database, DB_DIR, foldseek_gpu)
 
 
     ###
@@ -582,6 +621,27 @@ def proteins(
     model_name = "Rostlab/ProstT5_fp16"
     checkpoint_path = Path(CNN_DIR) / "cnn_chkpnt" / "model.pt"
 
+
+    if autotune:
+
+        input_path = files("baktfold.features.autotune_data").joinpath("swissprot_5000.fasta.gz")
+
+        step = 20
+        min_batch = 1
+        max_batch = 301
+        sample_seqs = 602
+
+        batch_size = run_autotune(
+            input_path,
+            model_dir,
+            model_name,
+            cpu,
+            threads,
+            step, 
+            min_batch,
+            max_batch, 
+            sample_seqs)
+
     aas = subcommand_predict(
         aas,
         cds_dict,
@@ -593,11 +653,11 @@ def proteins(
         model_name,
         checkpoint_path,
         batch_size,
-        proteins_flag=False,
         save_per_residue_embeddings=save_per_residue_embeddings,
         save_per_protein_embeddings=save_per_protein_embeddings,
         threads=threads,
         mask_threshold=mask_threshold,
+        has_duplicate_locus=False
     )
 
     # baktfold compare
@@ -623,7 +683,8 @@ def proteins(
         extra_foldseek_params=extra_foldseek_params,
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
-        custom_annotations=custom_annotations
+        custom_annotations=custom_annotations,
+        has_duplicate_locus=False
     )
 
     #####
@@ -697,6 +758,7 @@ def predict(
     prefix,
     force,
     database,
+    autotune,
     batch_size,
     cpu,
     omit_probs,
@@ -723,13 +785,14 @@ def predict(
         "--force": force,
         "--prefix": prefix,
         "--database": database,
+        "--autotune": autotune,
         "--batch-size": batch_size,
         "--cpu": cpu,
         "--omit-probs": omit_probs,
-        "--save-per-residue_embeddings": save_per_residue_embeddings,
+        "--save-per-residue-embeddings": save_per_residue_embeddings,
         "--save-per-protein-embeddings": save_per_protein_embeddings,
         "--mask-threshold": mask_threshold,
-        "--all-proteins": all_proteins
+        "--all-proteins": all_proteins,
 
     }
 
@@ -740,7 +803,7 @@ def predict(
     check_dependencies()
 
     # check the database is installed and return it
-    #database = validate_db(database, DB_DIR, foldseek_gpu)
+    database = validate_db(database, DB_DIR, foldseek_gpu=False) # dont need the foldseek gpu here as not an inout option
 
 
     ###
@@ -748,33 +811,39 @@ def predict(
     ###
 
     fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
-    data, features = parse_json_input(input, fasta_aa)
+    data, features, has_duplicate_locus = parse_json_input(input, fasta_aa, all_proteins)
 
     ###
     # split features in hypotheticals and non hypotheticals
     ###
 
     if all_proteins:
-        hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS ]
-        
-        non_hypothetical_features = [
-        feat for feat in features
-        if (feat['type'] != bc.FEATURE_CDS) 
-    ]
+        hypotheticals = [
+            feat for feat in features
+            if feat['type'] == bc.FEATURE_CDS
+        ]
     else:
-        hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat]
-        non_hypothetical_features = [
+        hypotheticals = [
+            feat for feat in features
+            if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat
+        ]
+
+    non_hypothetical_features = [
         feat for feat in features
-        if (feat['type'] != bc.FEATURE_CDS) or 
-        (feat['type'] == bc.FEATURE_CDS and 'hypothetical' not in (feat.get('product') or '').lower())
+        if feat not in hypotheticals
     ]
 
 
 
     # put the CDS AA in a simple dictionary for ProstT5 code
     cds_dict = {}
-    for feat in hypotheticals:
-        cds_dict[feat['locus']] = feat['aa']
+    if has_duplicate_locus:
+        for feat in hypotheticals:
+            cds_dict[feat['id']] = feat['aa']
+    
+    else:
+        for feat in hypotheticals:
+            cds_dict[feat['locus']] = feat['aa']
 
 
     # add a function to add 3Di to cds_dict
@@ -783,6 +852,26 @@ def predict(
     model_dir = database
     model_name = "Rostlab/ProstT5_fp16"
     checkpoint_path = Path(CNN_DIR) / "cnn_chkpnt" / "model.pt"
+
+    if autotune:
+
+        input_path = files("baktfold.features.autotune_data").joinpath("swissprot_5000.fasta.gz")
+
+        step = 20
+        min_batch = 1
+        max_batch = 301
+        sample_seqs = 602
+
+        batch_size = run_autotune(
+            input_path,
+            model_dir,
+            model_name,
+            cpu,
+            threads,
+            step, 
+            min_batch,
+            max_batch, 
+            sample_seqs)
 
     hypotheticals = subcommand_predict(
         hypotheticals,
@@ -795,11 +884,11 @@ def predict(
         model_name,
         checkpoint_path,
         batch_size,
-        proteins_flag=False,
         save_per_residue_embeddings=save_per_residue_embeddings,
         save_per_protein_embeddings=save_per_protein_embeddings,
         threads=threads,
         mask_threshold=mask_threshold,
+        has_duplicate_locus=has_duplicate_locus
     )
 
     # end baktfold
@@ -860,6 +949,7 @@ def compare(
     custom_annotations,
     foldseek_gpu,
     all_proteins,
+    euk,
     **kwargs,
 ):
     """Runs Foldseek vs baktfold db"""
@@ -889,7 +979,8 @@ def compare(
         "--custom-db": custom_db,
         "--custom-annotations": custom_annotations,
         "--foldseek-gpu": foldseek_gpu,
-        "--all-proteins": all_proteins
+        "--all-proteins": all_proteins,
+        "--euk": euk
     }
 
     # initial logging etc
@@ -899,7 +990,7 @@ def compare(
     check_dependencies()
 
     # check the database is installed and return it
-    #database = validate_db(database, DB_DIR, foldseek_gpu)
+    database = validate_db(database, DB_DIR, foldseek_gpu)
 
     # bool for the subcommand
     if (structure_dir):
@@ -919,29 +1010,27 @@ def compare(
     ###
 
     fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
-    data, features = parse_json_input(input, fasta_aa)
+    data, features, has_duplicate_locus = parse_json_input(input, fasta_aa, all_proteins)
 
     ###
     # split features in hypotheticals and non hypotheticals
     ###
 
     if all_proteins:
-        hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS ]
-        
-        non_hypothetical_features = [
-        feat for feat in features
-        if (feat['type'] != bc.FEATURE_CDS) 
-    ]
+        hypotheticals = [
+            feat for feat in features
+            if feat['type'] == bc.FEATURE_CDS
+        ]
     else:
+        hypotheticals = [
+            feat for feat in features
+            if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat
+        ]
 
-        hypotheticals = [feat for feat in features if feat['type'] == bc.FEATURE_CDS and 'hypothetical' in feat]
-        non_hypothetical_features = [
+    non_hypothetical_features = [
         feat for feat in features
-        if (feat['type'] != bc.FEATURE_CDS) or 
-        (feat['type'] == bc.FEATURE_CDS and 'hypothetical' not in (feat.get('product') or '').lower())
+        if feat not in hypotheticals
     ]
-
-
 
     # code to read in and append 3Di from ProstT5 to the dictionary for the json output
 
@@ -950,7 +1039,10 @@ def compare(
         predictions = {record.id: str(record.seq) for record in SeqIO.parse(threedi_aa, "fasta")}
         
         for feat in hypotheticals:
-            seq_id = feat["locus"]
+            if has_duplicate_locus:
+                seq_id = feat["id"]
+            else:
+                seq_id = feat["locus"]
             threedi_seq = predictions.get(seq_id)
             feat["3di"] = threedi_seq if threedi_seq else ""
 
@@ -972,7 +1064,8 @@ def compare(
         extra_foldseek_params=extra_foldseek_params,
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
-        custom_annotations=custom_annotations
+        custom_annotations=custom_annotations,
+        has_duplicate_locus=has_duplicate_locus
     )
 
 
@@ -1000,9 +1093,15 @@ def compare(
 
     # flatten sorted features
     features = []
+
     for seq in data['sequences']:
         seq_features = features_by_sequence[seq['id']]
-        seq_features.sort(key=lambda k: k['start'])  # sort features by start position
+        if euk: # ensure gene -> mRNA -> CDS ordering for each locus tag but overall keep the start as the prinary sort
+
+            seq_features.sort(key=sort_euk_feature_key)
+
+        else:
+            seq_features.sort(key=lambda k: k['start'])  # sort features by start position
         features.extend(seq_features)
 
     # overwrite feature list with sorted features
@@ -1021,7 +1120,7 @@ def compare(
     # bakta output module
     ####
     logger.info('writing baktfold outputs')
-    io.write_bakta_outputs(data,features, features_by_sequence, output, prefix, custom_db)
+    io.write_bakta_outputs(data,features, features_by_sequence, output, prefix, custom_db, euk, has_duplicate_locus)
 
     # cleanup the temp files
     if not keep_tmp_files:
@@ -1060,6 +1159,7 @@ def proteins_predict(
     prefix,
     force,
     database,
+    autotune,
     batch_size,
     cpu,
     omit_probs,
@@ -1084,6 +1184,7 @@ def proteins_predict(
         "--force": force,
         "--prefix": prefix,
         "--database": database,
+        "--autotune": autotune,
         "--batch-size": batch_size,
         "--cpu": cpu,
         "--omit-probs": omit_probs,
@@ -1100,7 +1201,7 @@ def proteins_predict(
     check_dependencies()
 
     # check the database is installed and return it
-    #database = validate_db(database, DB_DIR, foldseek_gpu)
+    database = validate_db(database, DB_DIR, foldseek_gpu=False) # dont need foldseek_gpu
 
 
     ###
@@ -1121,6 +1222,26 @@ def proteins_predict(
     model_name = "Rostlab/ProstT5_fp16"
     checkpoint_path = Path(CNN_DIR) / "cnn_chkpnt" / "model.pt"
 
+    if autotune:
+
+        input_path = files("baktfold.features.autotune_data").joinpath("swissprot_5000.fasta.gz")
+
+        step = 20
+        min_batch = 1
+        max_batch = 301
+        sample_seqs = 602
+
+        batch_size = run_autotune(
+            input_path,
+            model_dir,
+            model_name,
+            cpu,
+            threads,
+            step, 
+            min_batch,
+            max_batch, 
+            sample_seqs)
+
     aas = subcommand_predict(
         aas,
         cds_dict,
@@ -1132,11 +1253,11 @@ def proteins_predict(
         model_name,
         checkpoint_path,
         batch_size,
-        proteins_flag=False,
         save_per_residue_embeddings=save_per_residue_embeddings,
         save_per_protein_embeddings=save_per_protein_embeddings,
         threads=threads,
         mask_threshold=mask_threshold,
+        has_duplicate_locus=False
     )
 
     # end baktfold
@@ -1280,7 +1401,8 @@ def proteins_compare(
         extra_foldseek_params=extra_foldseek_params,
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
-        custom_annotations=custom_annotations
+        custom_annotations=custom_annotations,
+        has_duplicate_locus=False
     )
 
     #####
@@ -1320,6 +1442,250 @@ def proteins_compare(
 
     # end baktfold
     end_baktfold(start_time, "protein-compare")
+
+"""
+createdb command
+"""
+
+
+@main_cli.command()
+@click.help_option("--help", "-h")
+@click.version_option(get_version(), "--version", "-V")
+@click.pass_context
+@click.option(
+    "--fasta-aa",
+    help="Path to input Amino Acid FASTA file of proteins",
+    type=click.Path(),
+    required=True,
+)
+@click.option(
+    "--fasta-3di",
+    help="Path to input 3Di FASTA file of proteins",
+    type=click.Path(),
+    required=True,
+)
+@click.option(
+    "-o",
+    "--output",
+    default="output_baktfold_foldseek_db",
+    show_default=True,
+    type=click.Path(),
+    help="Output directory ",
+)
+@click.option(
+    "-t",
+    "--threads",
+    help="Number of threads to use with Foldseek",
+    default=1,
+    type=int,
+    show_default=True,
+)
+@click.option(
+    "-p",
+    "--prefix",
+    default="baktfold_foldseek_db",
+    help="Prefix for Foldseek database",
+    type=str,
+    show_default=True,
+)
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Force overwrites the output directory",
+)
+def createdb(
+    ctx,
+    fasta_aa,
+    fasta_3di,
+    output,
+    threads,
+    prefix,
+    force,
+    **kwargs,
+):
+    """Creates foldseek DB from AA FASTA and 3Di FASTA input files"""
+
+    # validates the directory  (need to before I start phold or else no log file is written)
+    instantiate_dirs(output, force)
+
+    output: Path = Path(output)
+    logdir: Path = Path(output) / "logs"
+
+    params = {
+        "--fasta-aa": fasta_aa,
+        "--fasta-3di": fasta_3di,
+        "--output": output,
+        "--threads": threads,
+        "--force": force,
+        "--prefix": prefix,
+    }
+
+    # initial logging etc
+    start_time = begin_baktfold(params, "createdb")
+
+    # check foldseek is installed
+    check_dependencies()
+
+    logger.info(f"Creating the Foldseek database using {fasta_aa} and {fasta_3di}.")
+    logger.info(
+        f"The database will be saved in the {output} directory and be called {prefix}."
+    )
+
+    ############
+    # create foldseek db
+    ############
+
+    foldseek_query_db_path: Path = Path(output)
+    foldseek_query_db_path.mkdir(parents=True, exist_ok=True)
+
+    generate_foldseek_db_from_aa_3di(
+        fasta_aa, fasta_3di, foldseek_query_db_path, logdir, prefix
+    )
+
+    # end
+    end_baktfold(start_time, "createdb")
+
+
+
+"""
+convert  options
+"""
+
+def convert_options(func):
+    """compare command line args"""
+    options = [
+        click.option(
+            "-i",
+            "--input",
+            help="Path to input Prokka GenBank (.gbk) output",
+            type=click.Path(),
+            required=True,
+        ),
+        click.option(
+            "-o",
+            "--outfile",
+            default="converted_bakta_formatted.json",
+            show_default=True,
+            type=click.Path(),
+            help="Output bakta format .json output",
+        ),
+        click.option(
+            "-f",
+            "--force",
+            is_flag=True,
+            help="Force overwrites the output file",
+        )
+    ]
+    for option in reversed(options):
+        func = option(func)
+    return func
+    
+
+
+"""
+convert prokka GenBank to Bakta formatted json
+"""
+
+@main_cli.command()
+@click.help_option("--help", "-h")
+@click.version_option(get_version(), "--version", "-V")
+@click.pass_context
+@convert_options
+def convert_prokka(
+    ctx,
+    input,
+    outfile,
+    force,
+    **kwargs,
+):
+    """Converts Prokka GenBank to Bakta format json"""
+
+    # validates the output file - check it doesnt exist, if it does overwrite it
+    validate_outfile(outfile, force)
+
+    # validates input genbank and returns records
+    records = check_genbank_and_prokka(input, euk=False)
+
+
+    params = {
+        "--input": input,
+        "--outfile": outfile,
+        "--force": force,
+    }
+
+    # initial logging etc
+    start_time = begin_baktfold(params, "convert-prokka", no_log=True)
+
+    # check foldseek is installed
+    # check_dependencies()
+
+    logger.info(f"Converting Prokka input GenBank file {input} to Bakta formatted .json file.")
+    logger.info(
+        f"This will be saved as {outfile}."
+    )
+
+    prokka_gbk_to_json(records, outfile)
+
+    logger.info(f"Conversion successful.")
+    logger.info(f"Bakta format JSON → {outfile}")
+ 
+    # end
+    end_baktfold(start_time, "convert-prokka")
+
+
+"""
+convert eukaryotic GenBank to Bakta formatted json
+"""
+
+@main_cli.command()
+@click.help_option("--help", "-h")
+@click.version_option(get_version(), "--version", "-V")
+@click.pass_context
+@convert_options
+def convert_euk(
+    ctx,
+    input,
+    outfile,
+    force,
+    **kwargs,
+):
+    """(Experimental) Converts eukaryotic GenBank to Bakta format json"""
+
+    # validates the output file - check it doesnt exist, if it does overwrite it
+    validate_outfile(outfile, force)
+
+    # validates input genbank and returns records
+    records = check_genbank_and_prokka(input, euk=True)
+
+
+    params = {
+        "--input": input,
+        "--outfile": outfile,
+        "--force": force,
+    }
+
+    # initial logging etc
+    start_time = begin_baktfold(params, "convert-euk", no_log=True)
+
+    # check foldseek is installed
+    # check_dependencies()
+
+    logger.info(f"Converting eukaryotic input GenBank file {input} to Bakta formatted .json file.")
+    logger.info(
+        f"This will be saved as {outfile}."
+    )
+
+    eukaryotic_gbk_to_json(records, outfile)
+
+    logger.info(f"Conversion successful.")
+    logger.info(f"Bakta format JSON → {outfile}")
+ 
+    # end
+    end_baktfold(start_time, "convert-euk")
+
+
+
 
 
 """
@@ -1388,6 +1754,114 @@ def install(
 
     # will check if db is present, and if not, download it
     install_database(database, foldseek_gpu, threads)
+
+@main_cli.command()
+@click.help_option("--help", "-h")
+@click.version_option(get_version(), "--version", "-V")
+@click.pass_context
+@click.option(
+    "-i",
+    "--input",
+    help="Optional path to input file of proteins if you do not want to use the default sample of 5000 Phold DB proteins",
+    type=click.Path()
+)
+@click.option(
+    "--cpu",
+    is_flag=True,
+    help="Use cpus only.",
+)
+@click.option(
+    "-t",
+    "--threads",
+    help="Number of threads",
+    default=1,
+    type=int,
+    show_default=True,
+)
+@click.option(
+    "-d",
+    "--database",
+    type=str,
+    default=None,
+    help="Specific path to installed phold database",
+)
+@click.option(
+    "--min_batch",
+    show_default=True,
+    type=int,
+    default=1,
+    help="Minimum batch size to test",
+)
+@click.option(
+    "--step",
+    show_default=True,
+    type=int,
+    default=10,
+    help="Controls batch size step increment",
+)
+@click.option(
+    "--max_batch",
+    default=251,
+    show_default=True,
+    type=int,
+    help="Maximum batch size to test",
+)
+@click.option(
+    "--sample_seqs",
+    default=500,
+    show_default=True,
+    type=int,
+    help="Number of proteins to subsample from input.",
+)
+def autotune(
+    ctx,
+    input,
+    cpu,
+    threads,
+    database,
+    step,
+    min_batch,
+    max_batch,
+    sample_seqs,
+    **kwargs,
+):
+    """Determines optimal batch size for 3Di prediction with your hardware"""
+
+    params = {
+        "--input": input,
+        "--threads": threads,
+        "--cpu": cpu,
+        "--database": database,
+        "--step": step,
+        "--min_batch": min_batch,
+        "--max_batch": max_batch,
+        "--sample_seqs": sample_seqs,
+    }
+
+    # initial logging etc
+    start_time = begin_baktfold(params, "autotune", no_log=True)
+
+    # check the database is installed
+    database = validate_db(database, DB_DIR, foldseek_gpu=False)
+
+    if input:
+        input_path = input
+    else:
+        input_path = files("baktfold.features.autotune_data").joinpath("swissprot_5000.fasta.gz")
+
+    model_dir = database
+    model_name = "Rostlab/ProstT5_fp16"
+
+    batch_size = run_autotune(
+        input_path,
+        model_dir,
+        model_name,
+        cpu,
+        threads,
+        step, 
+        min_batch,
+        max_batch, 
+        sample_seqs)
 
 
 @click.command()

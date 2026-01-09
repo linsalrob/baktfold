@@ -51,13 +51,14 @@ begin and end functions
 """
 
 
-def begin_baktfold(params: Dict[str, Any], subcommand: str) -> int:
+def begin_baktfold(params: Dict[str, Any], subcommand: str, no_log: bool = False) -> int:
     """
     Begin baktfold process.
 
     Parameters:
         params (Dict[str, Any]): A dictionary of parameters for baktfold.
         subcommand (str): Subcommand indicating the baktfold operation.
+        no_log (bool): No log file
 
     Returns:
         int: Start time of the baktfold process.
@@ -68,9 +69,10 @@ def begin_baktfold(params: Dict[str, Any], subcommand: str) -> int:
     cfg.run_start = datetime.now()
 
     # initial logging stuff
-    log_file = os.path.join(params["--output"], f"baktfold_{subcommand}_{start_time}.log")
-    # adds log file
-    logger.add(log_file)
+    if not no_log:
+        log_file = os.path.join(params["--output"], f"baktfold_{subcommand}_{start_time}.log")
+        # adds log file
+        logger.add(log_file)
     logger.add(lambda _: sys.exit(1), level="ERROR")
 
     print_splash()
@@ -190,6 +192,7 @@ def clean_up_temporary_files(output: Path, prefix: str) -> None:
     result_tsv_swissprot: Path = Path(output) / "foldseek_results_swissprot.tsv"
     result_tsv_afdb: Path = Path(output) / "foldseek_results_afdb_clusters.tsv"
     result_tsv_pdb: Path = Path(output) / "foldseek_results_pdb.tsv"
+    result_tsv_cath: Path = Path(output) / "foldseek_results_cath.tsv"
     result_tsv_custom: Path = Path(output) / "foldseek_results_custom.tsv"
     foldseek_db: Path = Path(output) / "foldseek_db"
     result_db_base: Path = Path(output) / "result_db"
@@ -204,4 +207,43 @@ def clean_up_temporary_files(output: Path, prefix: str) -> None:
     remove_file(result_tsv_afdb)
     remove_file(result_tsv_pdb)
     remove_file(result_tsv_custom)
+    remove_file(result_tsv_cath)
+
+def get_type_rank(f):
+    """
+    ranks eukaryotic features 1) in order of gene -> mRNA -> CDS and gene -> tRNA
+    dynamically adjusts if 5'UTR and 3'UTR is present
+    """
+    t = f['type']
+    strand = f.get('strand', '+')  # default to + if missing
+
+    # fixed ranks
+    base_order = {
+        'gene': 0,
+        'mRNA': 1,
+        'cds': 3,
+        'tRNA': 6
+    }
+
+    # dynamic UTR ordering
+    if t == bc.FEATURE_5UTR:
+        return 2 if strand == '+' else 4
+    if t == bc.FEATURE_3UTR:
+        return 4 if strand == '+' else 2
+
+    return base_order.get(t, 99)   # non-protein features become 99
+
+
+def sort_euk_feature_key(f):
+    start = f.get('start', float('inf'))
+    stop = f.get('stop', float('inf'))
+    locus = f.get('locus')
+    type_rank = get_type_rank(f)
+
+    if locus and type_rank != 99:
+        # Within a locus → sort by type rank second and stop last (if multiple CDS e.g.)
+        return (start, 0, locus, type_rank, stop)
+    else:
+        # Non-locus or non-gene features → sort only by start
+        return (start, 1, '', 99, stop)
 

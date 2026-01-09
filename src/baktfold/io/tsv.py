@@ -23,7 +23,7 @@ def write_features(sequences: Sequence[dict], features_by_sequence: Dict[str, di
     logger.info(f'write feature tsv: path={tsv_path}')
 
     with tsv_path.open('wt') as fh:
-        fh.write('# Annotated with Bakta\n')
+        fh.write('# Annotated with Baktfold\n')
         fh.write(f'# Software: v{cfg.version}\n')
         fh.write(f"# Database: v{cfg.version}\n") # fix later
         #fh.write(f"# Database: v{cfg.db_info['major']}.{cfg.db_info['minor']}, {cfg.db_info['type']}\n")
@@ -56,26 +56,32 @@ def write_features(sequences: Sequence[dict], features_by_sequence: Dict[str, di
                         str(feat['stop']),
                         feat['strand'],
                         feat.get('locus', ''),
-                        gene,
-                        product,
+                        str(gene or ''),        # handles None → ''
+                        str(product or ''),     # handles None → ''
                         ', '.join(sorted(feat.get('db_xrefs', [])))
                     ])
                 )
                 fh.write('\n')
                 if(feat_type == bc.FEATURE_CRISPR):
                     i = 0
-                    while i < len(feat['spacers']):
-                        repeat = feat['repeats'][i]
-                        fh.write('\t'.join([seq_id, bc.FEATURE_CRISPR_REPEAT, str(repeat['start']), str(repeat['stop']), repeat['strand'], '', '', f"CRISPR repeat", '']))
-                        fh.write('\n')
-                        spacer = feat['spacers'][i]
-                        fh.write('\t'.join([seq_id, bc.FEATURE_CRISPR_SPACER, str(spacer['start']), str(spacer['stop']), spacer['strand'], '', '', f"CRISPR spacer, sequence {spacer['sequence']}", '']))
-                        fh.write('\n')
-                        i += 1
-                    if(len(feat['repeats']) - 1 == i):
-                        repeat = feat['repeats'][i]
-                        fh.write('\t'.join([seq_id, bc.FEATURE_CRISPR_REPEAT, str(repeat['start']), str(repeat['stop']), repeat['strand'], '', '', f"CRISPR repeat", '']))
-                        fh.write('\n')
+                    # spacers and repeats wont exist if Prokka input
+                    spacers = feat.get('spacers', [])
+                    repeat = feat.get('repeat', [])
+
+                    if len(spacers) > 0 and len(repeat) > 0: 
+                    # if not - will just skip
+                        while i < len(feat['spacers']):
+                            repeat = feat['repeats'][i]
+                            fh.write('\t'.join([seq_id, bc.FEATURE_CRISPR_REPEAT, str(repeat['start']), str(repeat['stop']), repeat['strand'], '', '', f"CRISPR repeat", '']))
+                            fh.write('\n')
+                            spacer = feat['spacers'][i]
+                            fh.write('\t'.join([seq_id, bc.FEATURE_CRISPR_SPACER, str(spacer['start']), str(spacer['stop']), spacer['strand'], '', '', f"CRISPR spacer, sequence {spacer['sequence']}", '']))
+                            fh.write('\n')
+                            i += 1
+                        if(len(feat['repeats']) - 1 == i):
+                            repeat = feat['repeats'][i]
+                            fh.write('\t'.join([seq_id, bc.FEATURE_CRISPR_REPEAT, str(repeat['start']), str(repeat['stop']), repeat['strand'], '', '', f"CRISPR repeat", '']))
+                            fh.write('\n')
     return
 
 DB_IPS_COL_UNIREF100 = 'uniref100_id'
@@ -152,44 +158,53 @@ def write_feature_inferences(sequences: Sequence[dict], features_by_sequence: Di
                     fh.write('\n')
     return
 
-def map_aa_columns(feat: dict, custom_db: bool) -> Sequence[str]:
-    # no gene here for now
-    # gene = feat.get('gene', None)
-    # if(gene is None):
-    #     gene = ''
-
-    # header_columns = ['Locus', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB']
-
-    # for the GenBank
+def map_aa_columns(feat: dict, custom_db: bool, has_duplicate_locus: bool) -> Sequence[str]:
+    # Ensure length exists
     if 'length' not in feat:
-        feat['length'] = int(len(feat['nt'])/3)
+        feat['length'] = int(len(feat['nt']) / 3)
+
+    xrefs = feat.get('db_xrefs', [])
+
+    # Extract dbxref groups once
+    def join_filtered(prefix: str, replacement: str = None):
+        if replacement is None:
+            replacement = prefix
+        return ','.join(
+            db.replace(replacement, '') for db in xrefs
+            if prefix in db
+        )
+
+    swissprot   = join_filtered('swissprot', 'afdb_v6:')
+    afdbclust   = join_filtered('afdbclusters_', 'afdb_v6:')
+    pdb         = join_filtered('pdb:')
+    cath        = join_filtered('cath:')
+    custom_refs = join_filtered('custom:', 'custom:custom_')
+
+    # Build the output row
+    row = [feat['locus']]
+
+    # add id if multiple CDS per Locus in that record (euks)
+    if has_duplicate_locus:
+        row.append(feat['id'])
+
+    row.extend([
+        str(feat['length']),
+        feat['product'],
+        swissprot,
+        afdbclust,
+        pdb,
+        cath,
+    ])
 
     if custom_db:
+        row.append(custom_refs)
 
-        return [
-            feat['locus'],
-            str(feat['length']),
-            #gene,
-            feat['product'],
-            ','.join([dbxref.replace('afdb_v6:', '') for dbxref in feat['db_xrefs'] if 'swissprot' in dbxref]),
-            ','.join([dbxref.replace('afdb_v6:', '') for dbxref in feat['db_xrefs'] if 'afdbclusters_' in dbxref]),
-            ','.join([dbxref.replace('pdb:', '') for dbxref in feat['db_xrefs'] if 'pdb:' in dbxref]),
-            ','.join([dbxref.replace('cath:', '') for dbxref in feat['db_xrefs'] if 'cath:' in dbxref]),
-            ','.join([dbxref.replace('custom:custom_', '') for dbxref in feat['db_xrefs'] if 'custom:' in dbxref]),
-        ]
-    else:
-        return [
-            feat['locus'],
-            str(feat['length']),
-            #gene,
-            feat['product'],
-            ','.join([dbxref.replace('afdb_v6:', '') for dbxref in feat['db_xrefs'] if 'swissprot' in dbxref]),
-            ','.join([dbxref.replace('afdb_v6:', '') for dbxref in feat['db_xrefs'] if 'afdbclusters_' in dbxref]),
-            ','.join([dbxref.replace('pdb:', '') for dbxref in feat['db_xrefs'] if 'pdb:' in dbxref]),
-            ','.join([dbxref.replace('cath:', '') for dbxref in feat['db_xrefs'] if 'cath:' in dbxref]),
-        ]
+    return row
 
-def write_protein_features(features: Sequence[dict], header_columns: Sequence[str], tsv_path: Path, custom_db: bool):
+
+
+
+def write_protein_features(features: Sequence[dict], header_columns: Sequence[str], tsv_path: Path, custom_db: bool, has_duplicate_locus: bool):
     """Export protein features in TSV format."""
     logger.info(f'write protein feature tsv: path={tsv_path}')
 
@@ -199,7 +214,7 @@ def write_protein_features(features: Sequence[dict], header_columns: Sequence[st
         fh.write('\t'.join(header_columns))
         fh.write('\n')
         for feat in features:
-            columns = map_aa_columns(feat, custom_db)
+            columns = map_aa_columns(feat, custom_db, has_duplicate_locus)
             fh.write('\t'.join(columns))
             fh.write('\n')
     return
@@ -210,7 +225,7 @@ def write_hypotheticals(hypotheticals: Sequence[dict], tsv_path: Path):
     logger.info('write hypothetical tsv: path=%s', tsv_path)
 
     with tsv_path.open('wt') as fh:
-        fh.write(f'#Annotated with Bakta v{cfg.version}, https://github.com/oschwengers/bakta\n')
+        fh.write(f'#Annotated with Baktfold v{cfg.version}, https://github.com/oschwengers/bakta\n')
         #fh.write(f"#Database v{cfg.db_info['major']}.{cfg.db_info['minor']}, https://doi.org/10.5281/zenodo.4247252\n")
         fh.write('#Sequence Id\tStart\tStop\tStrand\tLocus Tag\tMol Weight [kDa]\tIso El. Point\tPfam hits\tDbxrefs\n')
         for hypo in hypotheticals:

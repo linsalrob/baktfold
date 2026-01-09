@@ -17,14 +17,22 @@ import baktfold.bakta.so as so
 # log = logging.getLogger('INSDC')
 
 
-def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
+def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka, euk):
+
+    # need to pass the transl table from bakta or prokka not the config
+    # best to just detect it from the input json
+    # if prokka:
+    #     translation_table
+
+    # need to give euk to not give trnas as trnascan - do
+
     sequence_list = []
     for seq in data['sequences']:
         sequence_features = []
         if len(features) > 0:
             sequence_features = [feat for feat in features if feat['sequence'] == seq['id']] if 'sequence' in features[0] else [feat for feat in features if feat['contig'] == seq['id']]  # <1.10.0 compatibility
         comment = (
-            'Annotated with Bakta',
+            'Annotated with Baktfold',
             f"Software: v{cfg.version}\n",
             f"Database: v{cfg.version}\n", # fix later
             #f"Database: v{cfg.db_info['major']}.{cfg.db_info['minor']}, {cfg.db_info['type']}\n",
@@ -55,10 +63,39 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
             'comment': comment
             # TODO: taxonomy
         }
-        source_qualifiers = {
-            'mol_type': 'genomic DNA'
-            # 'molecule_type': 'DNA' #  might be necessary in BioPython > 1.78 along with removal of Seq(..., generic_dna)
-        }
+        if euk:
+
+            source_qualifiers = {}
+
+            # Optional fields – add only if present
+            optional_fields = [
+                'mol_type',
+                'organism', #  should be present
+                'strain', #  should be present
+                'isolate', #  should be present
+                'db_xref', #  should be present
+                'note', #  should be present
+                'collection_date',
+                'country',
+                'host',
+                'isolation_source'
+            ]
+
+            for field in optional_fields:
+                value = seq.get(field)
+                if value:  # only add if exists and is truth
+                    source_qualifiers[field] = value
+                else:
+                    if field == 'mol_type':
+                        # Always include mol_type
+                        source_qualifiers['mol_type'] = 'genomic DNA'
+            
+        else:
+            
+            source_qualifiers = {
+                'mol_type': 'genomic DNA'
+                # 'molecule_type': 'DNA' #  might be necessary in BioPython > 1.78 along with removal of Seq(..., generic_dna)
+            }
 
         description = ''
         if(data['genome'].get('taxon', None)):
@@ -102,6 +139,11 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
                 qualifiers['product'] = feature['product']
             if('locus' in feature):
                 qualifiers['locus_tag'] = feature['locus']
+            if('standard_name' in feature): # euk mrnas
+                qualifiers['standard_name'] = feature['standard_name'] 
+            if euk:
+                if('pseudo' in feature): # euk genes, mrna, CDS pseudo
+                    qualifiers['pseudo'] = ['']        
 
             accompanying_features=[]
             if(feature['type'] == bc.FEATURE_GAP):
@@ -122,22 +164,41 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
                 qualifiers['note'].append(feature['product'])
                 if('product' in qualifiers):
                     del qualifiers['product']
+
+            elif(feature['type'] == bc.FEATURE_GENE):
+                insdc_feature_type = bc.FEATURE_GENE
+            elif(feature['type'] == bc.FEATURE_MRNA):
+                insdc_feature_type = bc.FEATURE_MRNA
+                
+
             elif(feature['type'] == bc.FEATURE_CDS) or (feature['type'] == bc.FEATURE_SORF):
                 if(bc.PSEUDOGENE in feature):
                     qualifiers[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNPROCESSED if feature[bc.PSEUDOGENE]['paralog'] else bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNITARY
                     qualifiers['note'].append(feature[bc.PSEUDOGENE]['description'])
                 else:
-                    qualifiers['protein_id'] = f"gnl|Bakta|{feature['locus']}"
+                    # add protein id for euk
+                    if euk:
+                        if feature.get('protein_id'):
+                            qualifiers['protein_id'] = feature['protein_id']
+                        else:
+                            qualifiers['protein_id'] = f"gnl|Baktfold|{feature['locus']}"  
+                    else:
+                        qualifiers['protein_id'] = f"gnl|Baktfold|{feature['locus']}"
                     qualifiers['translation'] = feature['aa']
                 qualifiers['codon_start'] = 1
-                qualifiers['transl_table'] = cfg.translation_table
+                if not euk:
+                    qualifiers['transl_table'] = cfg.translation_table
                 insdc_feature_type = bc.INSDC_FEATURE_CDS
                 inference = []
                 if(feature['type'] == bc.FEATURE_CDS):
+                    # add inference
+                    if prokka:
+                        inference.append('ab initio prediction:Prodigal:2.6')
                     if(feature.get('source', None) == bc.CDS_SOURCE_USER):
                         inference.append('EXISTENCE:non-experimental evidence, no additional details recorded')
                     else:
-                        inference.append('ab initio prediction:Prodigal:2.6')
+                        if not euk: # if euk just dont have anything
+                            inference.append('ab initio prediction:Prodigal:2.6')
                 else:
                     inference.append(f"ab initio prediction:Bakta:{'.'.join(cfg.version.split('.')[0:2])}")
                 if('ncbi_nrp_id' in feature.get('ups', {})):
@@ -183,7 +244,12 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
                         qualifiers['anticodon'] = f"(pos:{anti_codon_pos[0]}..{anti_codon_pos[1]},aa:{feature['amino_acid']},seq:{feature['anti_codon']})"
                     else:
                         qualifiers['note'].append(f"tRNA-{feature['amino_acid']} ({feature['anti_codon']})")
-                qualifiers['inference'] = 'profile:tRNAscan:2.0'
+                if prokka:
+                    qualifiers['inference'] = 'profile:tRNAscan:2.0'
+                elif euk:
+                    qualifiers['inference'] = 'profile:other:unknown'
+                else:
+                    qualifiers['inference'] = 'profile:aragorn:1.2'
                 insdc_feature_type = bc.INSDC_FEATURE_T_RNA
                 if(bc.PSEUDOGENE in feature):
                     qualifiers[bc.INSDC_FEATURE_PSEUDOGENE] = bc.INSDC_FEATURE_PSEUDOGENE_TYPE_UNKNOWN
@@ -195,10 +261,14 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
                         qualifiers['tag_peptide'] = f"complement({qualifiers['tag_peptide']})"
                 insdc_feature_type = bc.INSDC_FEATURE_TM_RNA
             elif(feature['type'] == bc.FEATURE_R_RNA):
+                if prokka:
+                    qualifiers['inference'] = 'profile:barrnap:0.9'
                 for rfam_id in [dbxref.split(':')[1] for dbxref in feature['db_xrefs'] if dbxref.split(':')[0] == bc.DB_XREF_RFAM]:
                     qualifiers['inference'] = f'profile:Rfam:{rfam_id}'
                 insdc_feature_type = bc.INSDC_FEATURE_R_RNA
             elif(feature['type'] == bc.FEATURE_NC_RNA):
+                if prokka:
+                    qualifiers['inference'] = 'profile:aragorn:1.2'
                 for rfam_id in [dbxref.split(':')[1] for dbxref in feature['db_xrefs'] if dbxref.split(':')[0] == bc.DB_XREF_RFAM]:
                     qualifiers['inference'] = f'profile:Rfam:{rfam_id}'
                 qualifiers[bc.INSDC_FEATURE_NC_RNA_CLASS] = select_ncrna_class(feature)
@@ -213,12 +283,27 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
             elif(feature['type'] == bc.FEATURE_CRISPR):
                 qualifiers[bc.INSDC_FEATURE_REPEAT_FAMILY] = 'CRISPR'
                 qualifiers[bc.INSDC_FEATURE_REPEAT_TYPE] = 'direct'
-                qualifiers[bc.INSDC_FEATURE_REPEAT_UNIT_SEQ] = feature['repeat_consensus']
-                qualifiers['inference'] = 'COORDINATES:alignment:pilercr:1.02'
+                # prokka wont have this 
+                if('repeat_consensus' in feature):
+                    qualifiers[bc.INSDC_FEATURE_REPEAT_UNIT_SEQ] = feature['repeat_consensus']
+                    qualifiers['inference'] = 'COORDINATES:alignment:pilercr:1.02'
+                # prokka uses minced - maybe for later here
                 insdc_feature_type = bc.INSDC_FEATURE_REPEAT_REGION
                 qualifiers['note'].append(feature['product'])
                 qualifiers.pop('product', None)
-
+            elif(feature['type'] == bc.FEATURE_REPEAT): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_REPEAT_REGION
+                qualifiers['rpt_family'] = feature['family']
+                qualifiers['note'].append(feature['product'])
+                qualifiers.pop('product', None)
+            elif(feature['type'] == bc.FEATURE_5UTR): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_5UTR
+                qualifiers['note'].append(feature['product']) 
+                qualifiers.pop('product', None)
+            elif(feature['type'] == bc.FEATURE_3UTR): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_3UTR
+                qualifiers['note'].append(feature['product']) 
+                qualifiers.pop('product', None)
             strand = None
             if(feature['strand'] == bc.STRAND_FORWARD):
                 strand = 1
@@ -227,36 +312,72 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
             elif(feature['strand'] == bc.STRAND_UNKNOWN):
                 strand = 0
 
-            start = feature['start'] - 1
-            stop = feature['stop']
-            if('edge' in feature):
-                fl_1 = FeatureLocation(start, seq['length'], strand=strand)
-                fl_2 = FeatureLocation(0, stop, strand=strand)
-                if(feature['strand'] == bc.STRAND_REVERSE):
-                    feature_location = CompoundLocation([fl_2, fl_1])
-                else:
-                    feature_location = CompoundLocation([fl_1, fl_2])
+            # euk
+            if (
+                feature.get("starts") 
+                and feature.get("stops") 
+                and isinstance(feature["starts"], list) 
+                and isinstance(feature["stops"], list)
+                and len(feature["starts"]) == len(feature["stops"])
+            ):
+                # Multi-exon CDS/mRNA – use the FIRST and LAST coords as overall range
+                start = feature["starts"][0] - 1       # 0-based for Biopython
+                stop = feature["stops"][-1]            # inclusive
+
+                # also build in here the parts
+
+                coords = list(zip(feature.get("starts"), feature.get("stops")))  # multi-part
+
+                # Build Biopython FeatureLocation or CompoundLocation
+                strand = 1 if feature['strand'] == bc.STRAND_FORWARD else -1
+                parts = []
+
+                for s, e in coords:
+                    parts.append(
+                        FeatureLocation(s - 1, e, strand=strand)
+                    )
+
+                feature_location = (
+                    CompoundLocation(parts)
+                    if len(parts) > 1
+                    else parts[0]
+                )
+
+
             else:
-                if('truncated' in feature):
-                    if(bc.PSEUDOGENE not in feature):  # only add /pseudo qualifier if /pseudogene is not already set
-                        qualifiers[bc.INSDC_FEATURE_PSEUDO] = None
-                    if(feature['truncated'] == bc.FEATURE_END_5_PRIME):
-                        qualifiers['note'].append("(5' truncated)")
-                        if(feature['strand'] == bc.STRAND_FORWARD):
+
+                start = feature['start'] - 1
+                stop = feature['stop']
+                
+                # will be for all non euk ones here
+                if('edge' in feature):
+                    fl_1 = FeatureLocation(start, seq['length'], strand=strand)
+                    fl_2 = FeatureLocation(0, stop, strand=strand)
+                    if(feature['strand'] == bc.STRAND_REVERSE):
+                        feature_location = CompoundLocation([fl_2, fl_1])
+                    else:
+                        feature_location = CompoundLocation([fl_1, fl_2])
+                else:
+                    if('truncated' in feature):
+                        if(bc.PSEUDOGENE not in feature):  # only add /pseudo qualifier if /pseudogene is not already set
+                            qualifiers[bc.INSDC_FEATURE_PSEUDO] = None
+                        if(feature['truncated'] == bc.FEATURE_END_5_PRIME):
+                            qualifiers['note'].append("(5' truncated)")
+                            if(feature['strand'] == bc.STRAND_FORWARD):
+                                start = BeforePosition(start)
+                            else:
+                                stop = AfterPosition(stop)
+                        elif(feature['truncated'] == bc.FEATURE_END_3_PRIME):
+                            qualifiers['note'].append("(3' truncated)")
+                            if(feature['strand'] == bc.STRAND_FORWARD):
+                                stop = AfterPosition(stop)
+                            else:
+                                start = BeforePosition(start)
+                        elif(feature['truncated'] == bc.FEATURE_END_BOTH):
+                            qualifiers['note'].append('(partial)')
                             start = BeforePosition(start)
-                        else:
                             stop = AfterPosition(stop)
-                    elif(feature['truncated'] == bc.FEATURE_END_3_PRIME):
-                        qualifiers['note'].append("(3' truncated)")
-                        if(feature['strand'] == bc.STRAND_FORWARD):
-                            stop = AfterPosition(stop)
-                        else:
-                            start = BeforePosition(start)
-                    elif(feature['truncated'] == bc.FEATURE_END_BOTH):
-                        qualifiers['note'].append('(partial)')
-                        start = BeforePosition(start)
-                        stop = AfterPosition(stop)
-                feature_location = FeatureLocation(start, stop, strand=strand)
+                    feature_location = FeatureLocation(start, stop, strand=strand)
             if(feature.get('locus', None)):
                 gene_qualifier = {
                     'locus_tag': feature['locus']
@@ -278,7 +399,9 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
                 elif('truncated' in feature):
                     gene_qualifier[bc.INSDC_FEATURE_PSEUDO] = None
                 gen_seqfeat = SeqFeature(feature_location, type='gene', qualifiers=gene_qualifier)
-                seq_feature_list.append(gen_seqfeat)
+                # dont append gene feature for CDS MRNA GENE euks
+                if not euk:
+                    seq_feature_list.append(gen_seqfeat)
             feat_seqfeat = SeqFeature(feature_location, type=insdc_feature_type, qualifiers=qualifiers)
             seq_feature_list.append(feat_seqfeat)
             for acc_feature in accompanying_features:  # add accompanying features, e.g. signal peptides
@@ -288,10 +411,13 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict]):
     return sequence_list
 
 
-def write_features(data: dict, features: Sequence[dict], genbank_output_path: Path, embl_output_path: Path):
+def write_features(data: dict, features: Sequence[dict], genbank_output_path: Path, embl_output_path: Path, euk: bool = False):
     logger.info(f'prepare: genbank={genbank_output_path}, embl={embl_output_path}')
 
-    sequence_list = build_biopython_sequence_list(data, features)
+    # fix later
+    prokka = False
+
+    sequence_list = build_biopython_sequence_list(data, features, prokka, euk)
     with genbank_output_path.open('wt', encoding='utf-8') as fh:
         logger.info(f'write GenBank: path={genbank_output_path}')
         SeqIO.write(sequence_list, fh, format='genbank')

@@ -32,11 +32,11 @@ def subcommand_predict(
     model_name: str,
     checkpoint_path: Path,
     batch_size: int,
-    proteins_flag: bool,
     save_per_residue_embeddings: bool,
     save_per_protein_embeddings: bool,
     threads: int,
     mask_threshold: float,
+    has_duplicate_locus: bool
 ) -> bool:
     """
     Wrapper command for baktfold predict. Predicts embeddings using ProstT5 encoder + CNN prediction head.
@@ -100,11 +100,11 @@ def subcommand_predict(
         max_batch=batch_size,
         cpu=cpu,
         output_probs=output_probs,
-        proteins_flag=proteins_flag,
         save_per_residue_embeddings=save_per_residue_embeddings,
         save_per_protein_embeddings=save_per_protein_embeddings,
         threads=threads,
-        mask_threshold=mask_threshold
+        mask_threshold=mask_threshold,
+        has_duplicate_locus=has_duplicate_locus
     )
 
     mask_prop_threshold = mask_threshold/100
