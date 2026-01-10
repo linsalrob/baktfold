@@ -50,9 +50,10 @@ def convert_cds_feature(feature, seq_record, translation_table, id):
 
     # ----------- Location info -----------
 
+    # Extract location
     strand = "+" if feature.location.strand == 1 else "-"
 
-    if strand == -1:  # negative strand
+    if strand == "-":  # negative strand
         start = int(feature.location.end)     
         stop  = int(feature.location.start) - 1  
     else:  # positive strand
@@ -174,10 +175,10 @@ def convert_trna_feature(feature, seq_record, id):
 
     # ------------ Location ------------
 
+    # Extract location
     strand = "+" if feature.location.strand == 1 else "-"
 
-
-    if strand == -1:  # negative strand
+    if strand == "-":  # negative strand
         start = int(feature.location.end)     
         stop  = int(feature.location.start) - 1  
     else:  # positive strand
@@ -281,10 +282,10 @@ def convert_gene_feature(feature, rec, id):
         dict: Bakta-style rRNA feature
     """
 
+    # Extract location
     strand = "+" if feature.location.strand == 1 else "-"
-    
 
-    if strand == -1:  # negative strand
+    if strand == "-":  # negative strand
         start = int(feature.location.end)     
         stop  = int(feature.location.start) - 1  
     else:  # positive strand
@@ -343,7 +344,7 @@ def convert_mrna_feature(feature, rec, id):
     # Extract location
     strand = "+" if feature.location.strand == 1 else "-"
 
-    if strand == -1:  # negative strand
+    if strand == "-":  # negative strand
         start = int(feature.location.end)     
         stop  = int(feature.location.start) - 1  
     else:  # positive strand
@@ -521,10 +522,10 @@ def convert_utr_region_feature(feature, rec, id, three):
         type = "5'UTR"
         so_code =  so.SO_5UTR.id
 
-    # get position - can be neg or pos strand
+    # Extract location
     strand = "+" if feature.location.strand == 1 else "-"
-    
-    if strand == -1:  # negative strand
+
+    if strand == "-":  # negative strand
         start = int(feature.location.end)     
         stop  = int(feature.location.start) - 1  
     else:  # positive strand
@@ -593,12 +594,13 @@ def convert_misc_rna_feature(feature, rec, id):
     # Extract location
     strand = "+" if feature.location.strand == 1 else "-"
 
-    if strand == -1:  # negative strand
+    if strand == "-":  # negative strand
         start = int(feature.location.end)     
         stop  = int(feature.location.start) - 1  
     else:  # positive strand
         start = int(feature.location.start) + 1  
         stop  = int(feature.location.end)         
+
 
     qualifiers = feature.qualifiers
     gene = qualifiers.get("gene", [None])[0]
@@ -620,6 +622,54 @@ def convert_misc_rna_feature(feature, rec, id):
 
 
     return misc_rna_entry
+
+def convert_exon_feature(feature, rec, id):
+    """
+    Convert a GenBank exon feature to a simplified Bakta-style 'exon' feature.
+
+    Parameters
+    ----------
+    feature : Bio.SeqFeature
+        The exon feature from the GenBank record.
+    rec : Bio.SeqRecord
+        The full GenBank record.
+    id : str
+        Unique feature ID.
+
+    Returns
+    -------
+    dict
+        Bakta-style exon feature.
+    """
+
+    # Extract location
+    strand = "+" if feature.location.strand == 1 else "-"
+
+    if strand == "-":  # negative strand
+        start = int(feature.location.end)     
+        stop  = int(feature.location.start) - 1  
+    else:  # positive strand
+        start = int(feature.location.start) + 1  
+        stop  = int(feature.location.end)       
+
+    qualifiers = feature.qualifiers
+
+    gene = qualifiers.get("gene", [None])[0]
+    number = qualifiers.get("number", [None])[0]
+
+    exon_entry = {
+        "type": "exon",
+        "sequence": rec.id,
+        "start": start,
+        "stop": stop,
+        "strand": strand,
+        "gene": gene,
+        "number": number,
+        "id": id,
+    }
+
+    return exon_entry
+
 
 def build_bakta_sequence_entry(rec):
     """
@@ -834,7 +884,7 @@ def eukaryotic_gbk_to_json(records, output_json):
         for feature in record.features
     }
 
-    ORDER = ["tRNA", "gene", "mRNA", "CDS", "assembly_gap", "gap", "repeat_region", "5'UTR", "3'UTR", "misc_RNA"]
+    ORDER = ["tRNA", "gene", "mRNA", "CDS", "assembly_gap", "gap", "repeat_region", "5'UTR", "3'UTR", "misc_RNA", "exon"]
 
      # source always in input - it is made in output anyway
     covered_set = set(ORDER + ["source"])
@@ -915,7 +965,9 @@ def eukaryotic_gbk_to_json(records, output_json):
                 elif ftype == "3'UTR":
                     features.append(convert_utr_region_feature(feat, rec, id, three=True)) 
                 elif ftype == "misc_RNA":
-                    features.append(convert_misc_rna_feature(feat, rec, id))                   
+                    features.append(convert_misc_rna_feature(feat, rec, id))  
+                elif ftype == "exon":
+                    features.append(convert_exon_feature(feat, rec, id))               
                 i +=1
 
 
