@@ -748,6 +748,44 @@ def convert_mat_peptide_feature(feature, rec, id):
 
     return mat_peptide_entry
 
+def convert_mobile_element_feature(feature, rec, id):
+    """
+    Convert a GenBank mobile_element feature to a Bakta-style feature.
+    """
+
+    # Extract location
+    strand = "+" if feature.location.strand == 1 else "-"
+
+    if strand == "-":  # negative strand
+        start = int(feature.location.end)     
+        stop  = int(feature.location.start) - 1  
+    else:  # positive strand
+        start = int(feature.location.start) + 1  
+        stop  = int(feature.location.end)    
+
+    qualifiers = feature.qualifiers
+
+    mobile_element_entry = {
+        "type": "mobile_element",
+        "sequence": rec.id,
+        "start": start,
+        "stop": stop,
+        "strand": strand,
+        "mobile_element_type": qualifiers.get("mobile_element_type", [None])[0],
+        "note": qualifiers.get("note", [None])[0],
+        "db_xrefs": qualifiers.get("db_xref", []),
+        "id": id,
+    }
+
+    #  mobile_element  57369551..57369723
+    #                  /note="Derived by automated computational analysis using
+    #                  gene prediction method: RefSeqFE."
+    #                  /mobile_element_type="SINE:AmnSINE1"
+    #                  /db_xref="GeneID:106707176"
+
+    return mobile_element_entry
+
+
 def build_bakta_sequence_entry(rec):
     """
     Convert a  SeqRecord into a Bakta-style sequence entry.
@@ -962,7 +1000,7 @@ def eukaryotic_gbk_to_json(records, output_json):
     }
 
     ORDER = ["tRNA", "gene", "mRNA", "CDS", "assembly_gap", "gap", "repeat_region", "5'UTR", "3'UTR", "misc_RNA", "exon",
-             "mat_peptide"]
+             "mat_peptide", "mobile_element"]
 
      # source always in input - it is made in output anyway
     covered_set = set(ORDER + ["source"])
@@ -1048,6 +1086,8 @@ def eukaryotic_gbk_to_json(records, output_json):
                     features.append(convert_exon_feature(feat, rec, id))       
                 elif ftype == "mat_peptide":
                     features.append(convert_mat_peptide_feature(feat, rec, id))  
+                elif ftype == "mobile_element":
+                    features.append(convert_mobile_element_feature(feat, rec, id))  
                 i +=1
 
 
