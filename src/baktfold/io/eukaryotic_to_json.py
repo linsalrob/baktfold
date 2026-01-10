@@ -786,6 +786,84 @@ def convert_mobile_element_feature(feature, rec, id):
     return mobile_element_entry
 
 
+def convert_ncrna_feature(feature, rec, id):
+    """
+    Convert a ncrna feature to a Bakta-style feature.
+
+    Parameters:
+        feature: Bio.SeqFeature
+            The mRNA feature from the GBK.
+        rec: Bio.SeqRecord
+            The record containing the sequence.
+
+    Returns:
+        dict: Bakta-style misc_RNA feature.
+    """
+
+    seq = str(rec.seq)
+
+    # Extract location
+    strand = "+" if feature.location.strand == 1 else "-"
+
+    if strand == "-":  # negative strand
+        start = int(feature.location.end)     
+        stop  = int(feature.location.start) - 1  
+    else:  # positive strand
+        start = int(feature.location.start) + 1  
+        stop  = int(feature.location.end)        
+
+    if feature.location.__class__.__name__ == "CompoundLocation":
+        # Multi-exon (join)
+        starts = []
+        stops = []
+        for part in feature.location.parts:
+            if strand == -1:
+                # For minus strand, 5' is end, 3' is start
+                starts.append(int(part.end))
+                stops.append(int(part.start) - 1)
+            else:
+                starts.append(int(part.start) + 1)
+                stops.append(int(part.end))
+
+    else:
+        starts = None
+        stops = None
+
+    qualifiers = feature.qualifiers
+
+    ncrna_entry = {
+        "type": "ncRNA",
+        "sequence": rec.id,
+        "start": start,
+        "stop": stop,
+        "starts": starts,
+        "stops": stops,
+        "strand": strand,
+        "gene": qualifiers.get("gene", [None])[0],
+        "product": qualifiers.get("product", [None])[0],
+        "ncRNA_class": qualifiers.get("ncRNA_class", [None])[0],
+        "transcript_id": qualifiers.get("transcript_id", [None])[0],
+        "db_xrefs": qualifiers.get("db_xref", []),
+        "note": qualifiers.get("note", [None])[0],
+        "id": id,
+    }
+
+    #  ncRNA           join(189791085..189791793,189798997..189799081,
+    #                  189819873..189820364,189821703..189822337)
+    #                  /ncRNA_class="lncRNA"
+    #                  /gene="Gm30446"
+    #                  /product="predicted gene, 30446, transcript variant X6"
+    #                  /note="Derived by automated computational analysis using
+    #                  gene prediction method: Gnomon. Supporting evidence
+    #                  includes similarity to: 100% coverage of the annotated
+    #                  genomic feature by RNAseq alignments, including 2 samples
+    #                  with support for all annotated introns"
+    #                  /transcript_id="XR_001779629.1"
+    #                  /db_xref="GeneID:102632350"
+    #                  /db_xref="MGI:MGI:5589605"
+
+    return ncrna_entry
+
 def build_bakta_sequence_entry(rec):
     """
     Convert a  SeqRecord into a Bakta-style sequence entry.
@@ -1000,7 +1078,7 @@ def eukaryotic_gbk_to_json(records, output_json):
     }
 
     ORDER = ["tRNA", "gene", "mRNA", "CDS", "assembly_gap", "gap", "repeat_region", "5'UTR", "3'UTR", "misc_RNA", "exon",
-             "mat_peptide", "mobile_element"]
+             "mat_peptide", "mobile_element", "ncRNA"]
 
      # source always in input - it is made in output anyway
     covered_set = set(ORDER + ["source"])
@@ -1088,6 +1166,8 @@ def eukaryotic_gbk_to_json(records, output_json):
                     features.append(convert_mat_peptide_feature(feat, rec, id))  
                 elif ftype == "mobile_element":
                     features.append(convert_mobile_element_feature(feat, rec, id))  
+                elif ftype == "ncRNA":
+                    features.append(convert_ncrna_feature(feat, rec, id))  
                 i +=1
 
 
