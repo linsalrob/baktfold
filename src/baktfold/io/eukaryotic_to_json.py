@@ -947,6 +947,75 @@ def convert_misc_feature(feature, rec, id):
     return misc_feature_entry
 
 
+def convert_proprotein_feature(feature, rec, id):
+    """
+    Convert a proprotein feature to a Bakta-style feature.
+
+    Parameters:
+        feature: Bio.SeqFeature
+            The mRNA feature from the GBK.
+        rec: Bio.SeqRecord
+            The record containing the sequence.
+
+    Returns:
+        dict: Bakta-style proprotein feature.
+    """
+
+    seq = str(rec.seq)
+
+    # Extract location
+    strand = "+" if feature.location.strand == 1 else "-"
+
+    if strand == "-":  # negative strand
+        start = int(feature.location.end)     
+        stop  = int(feature.location.start) - 1  
+    else:  # positive strand
+        start = int(feature.location.start) + 1  
+        stop  = int(feature.location.end)        
+
+    if feature.location.__class__.__name__ == "CompoundLocation":
+        # Multi-exon (join)
+        starts = []
+        stops = []
+        for part in feature.location.parts:
+            if strand == -1:
+                # For minus strand, 5' is end, 3' is start
+                starts.append(int(part.end))
+                stops.append(int(part.start) - 1)
+            else:
+                starts.append(int(part.start) + 1)
+                stops.append(int(part.end))
+
+    else:
+        starts = None
+        stops = None
+
+    qualifiers = feature.qualifiers
+
+    proprotein_entry = {
+        "type": "misc_feature",
+        "sequence": rec.id,
+        "start": start,
+        "stop": stop,
+        "starts": starts,
+        "stops": stops,
+        "strand": strand,
+        "gene": qualifiers.get("gene", [None])[0],
+        "gene_synonym": qualifiers.get("gene_synonym", [None])[0],
+        "product": qualifiers.get("product", [None])[0],
+        "id": id,
+    }
+
+    #  proprotein      join(171053237..171053367,171053712..171053832)
+    #                  /gene="Apoa2"
+    #                  /gene_synonym="Alp-2; Apo-AII; Apoa-2; ApoA-II; ApoAII;
+    #                  Hdl-1"
+    #                  /product="apolipoprotein A-II proprotein"  
+
+    return proprotein_entry
+
+
+
 def convert_precursor_rna_feature(feature, rec, id):
     """
     Convert a GenBank precursor_RNA feature to a Bakta-style feature.
