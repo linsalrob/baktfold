@@ -1744,54 +1744,54 @@ def eukaryotic_gbk_to_json(records, output_json):
         
         for ftype in ORDER:
             logger.info(f"Converting feature type: {ftype} with {len(features_by_type.get(ftype, []))} features")  
+            if len(features_by_type.get(ftype, [])) > 0:
+                for feat in features_by_type.get(ftype, []): # sort by order of the types first
 
-            for feat in features_by_type.get(ftype, []): # sort by order of the types first
+                    id = f"{bakta_id_prefix}_{i}"
 
-                id = f"{bakta_id_prefix}_{i}"
-
-                if ftype == "CDS":
-                    features.append(convert_cds_feature(feat, rec, translation_table, id))
-                elif ftype == "mRNA":
-                    features.append(convert_mrna_feature(feat, rec, id))
-                elif ftype == "gene":
-                    features.append(convert_gene_feature(feat, rec, id))
-                elif ftype == "tRNA":
-                    features.append(convert_trna_feature(feat, rec, id))
-                elif ftype == "assembly_gap" or ftype == "gap":
-                    features.append(convert_assembly_gap_feature(feat, rec, id))
-                elif ftype == "repeat_region":
-                    features.append(convert_repeat_region_feature(feat, rec, id))
-                elif ftype == "5'UTR":
-                    features.append(convert_utr_region_feature(feat, rec, id, three=False))
-                elif ftype == "3'UTR":
-                    features.append(convert_utr_region_feature(feat, rec, id, three=True)) 
-                elif ftype == "misc_RNA":
-                    features.append(convert_misc_rna_feature(feat, rec, id))  
-                elif ftype == "exon":
-                    features.append(convert_exon_feature(feat, rec, id))       
-                elif ftype == "mat_peptide":
-                    features.append(convert_mat_peptide_feature(feat, rec, id))  
-                elif ftype == "mobile_element":
-                    features.append(convert_mobile_element_feature(feat, rec, id))  
-                elif ftype == "ncRNA":
-                    features.append(convert_ncrna_feature(feat, rec, id))  
-                elif ftype == "misc_feature":
-                    features.append(convert_misc_feature(feat, rec, id))  
-                elif ftype == "precursor_RNA":
-                    features.append(convert_precursor_rna_feature(feat, rec, id)) 
-                elif ftype == "proprotein":
-                    features.append(convert_proprotein_feature(feat, rec, id)) 
-                elif ftype == "protein_bind":
-                    features.append(convert_protein_bind_feature(feat, rec, id)) 
-                elif ftype == "rRNA":
-                    features.append(convert_rrna_feature(feat, rec, id)) 
-                elif ftype == "regulatory":
-                    features.append(convert_regulatory_feature(feat, rec, id))
-                elif ftype == "sig_peptide":
-                    features.append(convert_sig_peptide_feature(feat, rec, id))
-                elif ftype == "transit_peptide":
-                    features.append(convert_transit_peptide_feature(feat, rec, id))
-                i +=1
+                    if ftype == "CDS":
+                        features.append(convert_cds_feature(feat, rec, translation_table, id))
+                    elif ftype == "mRNA":
+                        features.append(convert_mrna_feature(feat, rec, id))
+                    elif ftype == "gene":
+                        features.append(convert_gene_feature(feat, rec, id))
+                    elif ftype == "tRNA":
+                        features.append(convert_trna_feature(feat, rec, id))
+                    elif ftype == "assembly_gap" or ftype == "gap":
+                        features.append(convert_assembly_gap_feature(feat, rec, id))
+                    elif ftype == "repeat_region":
+                        features.append(convert_repeat_region_feature(feat, rec, id))
+                    elif ftype == "5'UTR":
+                        features.append(convert_utr_region_feature(feat, rec, id, three=False))
+                    elif ftype == "3'UTR":
+                        features.append(convert_utr_region_feature(feat, rec, id, three=True)) 
+                    elif ftype == "misc_RNA":
+                        features.append(convert_misc_rna_feature(feat, rec, id))  
+                    elif ftype == "exon":
+                        features.append(convert_exon_feature(feat, rec, id))       
+                    elif ftype == "mat_peptide":
+                        features.append(convert_mat_peptide_feature(feat, rec, id))  
+                    elif ftype == "mobile_element":
+                        features.append(convert_mobile_element_feature(feat, rec, id))  
+                    elif ftype == "ncRNA":
+                        features.append(convert_ncrna_feature(feat, rec, id))  
+                    elif ftype == "misc_feature":
+                        features.append(convert_misc_feature(feat, rec, id))  
+                    elif ftype == "precursor_RNA":
+                        features.append(convert_precursor_rna_feature(feat, rec, id)) 
+                    elif ftype == "proprotein":
+                        features.append(convert_proprotein_feature(feat, rec, id)) 
+                    elif ftype == "protein_bind":
+                        features.append(convert_protein_bind_feature(feat, rec, id)) 
+                    elif ftype == "rRNA":
+                        features.append(convert_rrna_feature(feat, rec, id)) 
+                    elif ftype == "regulatory":
+                        features.append(convert_regulatory_feature(feat, rec, id))
+                    elif ftype == "sig_peptide":
+                        features.append(convert_sig_peptide_feature(feat, rec, id))
+                    elif ftype == "transit_peptide":
+                        features.append(convert_transit_peptide_feature(feat, rec, id))
+                    i +=1
 
 
     # ----------------------------
