@@ -1585,6 +1585,11 @@ def convert_options(func):
             "--force",
             is_flag=True,
             help="Force overwrites the output file",
+        ),
+        click.option(
+            "--verbose",
+            is_flag=True,
+            help="Verbose output",
         )
     ]
     for option in reversed(options):
@@ -1658,6 +1663,7 @@ def convert_euk(
     input,
     outfile,
     force,
+    verbose,
     **kwargs,
 ):
     """(Experimental) Converts eukaryotic GenBank to Bakta format json"""
@@ -1673,6 +1679,7 @@ def convert_euk(
         "--input": input,
         "--outfile": outfile,
         "--force": force,
+        "--verbose": verbose
     }
 
     # initial logging etc
@@ -1686,7 +1693,7 @@ def convert_euk(
         f"This will be saved as {outfile}."
     )
 
-    eukaryotic_gbk_to_json(records, outfile)
+    eukaryotic_gbk_to_json(records, outfile, verbose)
 
     logger.info(f"Conversion successful.")
     logger.info(f"Bakta format JSON → {outfile}")
