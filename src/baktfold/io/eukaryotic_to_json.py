@@ -1760,7 +1760,6 @@ def eukaryotic_gbk_to_json(records, output_json, verbose):
 
                 # choose iterator based on verbose or not
                 feat_iter = (
-                    feats_by_type
                     tqdm(
                         feats_by_type,
                         desc=f"{ftype}",
@@ -1769,7 +1768,7 @@ def eukaryotic_gbk_to_json(records, output_json, verbose):
                     )
                     if verbose
                     else feats_by_type
-                ) 
+                )
 
                 for feat in feat_iter:
 
