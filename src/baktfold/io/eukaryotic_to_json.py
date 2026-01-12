@@ -1805,7 +1805,7 @@ def eukaryotic_gbk_to_json(records, output_json):
                         features.append(convert_transit_peptide_feature(feat, rec, id))
                     i +=1
 
-
+    
     # ----------------------------
     # Sort features within each contig like Bakta
     # ----------------------------
@@ -1857,6 +1857,9 @@ def eukaryotic_gbk_to_json(records, output_json):
 
     with open(output_json, "w") as fh:
         json.dump(bakta_json, fh, indent=4)
+
+    logger.info(f"Total {total_features} converted successfully") 
+    logger.info(f"Output saved as {output_json}")
 
 
 
