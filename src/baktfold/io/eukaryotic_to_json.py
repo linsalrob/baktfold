@@ -1739,7 +1739,6 @@ def eukaryotic_gbk_to_json(records, output_json):
 
     for rec in records:
 
-
         logger.info(f"Converting record: {rec.id} with {len(rec.features)} features")        
 
         # get a ftype, feature list
@@ -1749,6 +1748,8 @@ def eukaryotic_gbk_to_json(records, output_json):
         
         for ftype in ORDER:
             for feat in features_by_type.get(ftype, []): # sort by order of the types first
+
+                logger.info(f"Converting feature: {feat} with {len(features_by_type.get(ftype, []))} features")  
 
                 id = f"{bakta_id_prefix}_{i}"
 
