@@ -1354,41 +1354,120 @@ def build_bakta_sequence_entry(rec):
     db_xref = None
     note = None
 
+    plasmid = None
+    chromosome = None
+    completeness_hint = None
+
     if source_feat:
         q = source_feat.qualifiers
 
-        # Always include mol_type if it exists
-        if "mol_type" in q:
-            mol_type = q.get("mol_type", [None])[0]
-
-        # Optional qualifiers
-        if "organism" in q:
-            organism = q["organism"][0]
-
-        if "strain" in q:
-            strain = q["strain"][0]
+        mol_type = q.get("mol_type", [None])[0]
+        organism = q.get("organism", [None])[0]
+        strain = q.get("strain", [None])[0]
+        note = q.get("note", [None])[0]
 
         if "db_xref" in q:
-            # db_xref is usually a 1-element list
             val = q["db_xref"]
             db_xref = val[0] if len(val) == 1 else val
 
-        if "note" in q:
-            note = q["note"][0]
+        plasmid = q.get("plasmid", [None])[0]
+        chromosome = q.get("chromosome", [None])[0]
+        completeness_hint = q.get("completeness", [None])[0]
             
+    # -----------------------------------------
+    # Infer topology
+    # -----------------------------------------
+    topology = rec.annotations.get("topology")
+    if topology not in {"linear", "circular"}:
+        topology = "linear"
+
+    # -----------------------------------------
+    # Infer type
+    # -----------------------------------------
+    if plasmid is not None or "plasmid" in rec.annotations:
+        seq_type = "plasmid"
+    elif chromosome is not None or "chromosome" in rec.annotations:
+        seq_type = "chromosome"
+    else:
+        seq_type = "contig"
+
+    # -----------------------------------------
+    # Infer completeness (conservative)
+    # -----------------------------------------
+    complete = False
+
+    if topology == "circular":
+        complete = True
+    elif completeness_hint is not None and completeness_hint.lower() == "complete":
+        complete = True
+    elif note and "complete genome" in note.lower():
+        complete = True
+
+    # -----------------------------------------
+    # Infer genetic codefor description
+    # -----------------------------------------
+    gcode = None
+
+    if "genetic_code" in rec.annotations:
+        gcode = rec.annotations["genetic_code"]
+    elif "gcode" in rec.annotations:
+        gcode = rec.annotations["gcode"]
+    elif source_feat and "transl_table" in source_feat.qualifiers:
+        gcode = source_feat.qualifiers["transl_table"][0]
+
+    # Conservative fallback
+    if gcode is None:
+        gcode = 1 if mol_type and "RNA" not in mol_type and organism and "eukary" in organism.lower() else 11
+
+    description_parts = [
+        f"[gcode={gcode}]",
+        f"[topology={topology}]",
+    ]
+
+    description = " ".join(description_parts)
+
+    # -----------------------------------------
+    # Build entry
+    # -----------------------------------------
     entry = {
-        "id": rec.id,                                 #  contig name
-        "description": None,                          #  does not have topology completeness etc 
-        "nt": seq,                                    # Nucleotide sequence
-        "length": len(seq),                           
-        "complete": None,                             #  does not define completeness
-        "type": None,                                 # plasmid/chromosome not known
-        "topology": rec.annotations.get("topology", "linear"),              # circular/linear - according to INDSC specs, if not specified, make it linear as a fallback
-        "simple_id": rec.id,                          # Same as id (placeholder)
-        "orig_id": rec.id,                            # No separate original ID fr
-        "orig_description": None,                     # Same as description
-        "name": None,                          
+        "id": rec.id,
+        "description": description,
+        "nt": seq,
+        "length": len(seq),
+        "complete": complete,
+        "type": seq_type,
+        "topology": topology,
+        "simple_id": rec.id,
+        "orig_id": rec.id,
+        "orig_description": None,
     }
+
+    # -----------------------------------------
+    # Add source qualifiers if present
+    # -----------------------------------------
+    if organism is not None:
+        entry["organism"] = organism
+    if mol_type is not None:
+        entry["mol_type"] = mol_type
+    if strain is not None:
+        entry["strain"] = strain
+    if db_xref is not None:
+        entry["db_xref"] = db_xref
+    if note is not None:
+        entry["note"] = note
+
+
+    # this is from bakta
+    # "id": "contig_1",
+    # "description": "[gcode=11] [topology=linear]",
+    # "nt": "AT"
+    # "length": 5165988,
+    # "complete": false,
+    # "type": "contig",
+    # "topology": "linear",
+    # "simple_id": "contig_1",
+    # "orig_id": "GCF_002368115_000000000001",
+    # "orig_description": ""
 
     # Add source qualifiers only if they exist
     if organism is not None:

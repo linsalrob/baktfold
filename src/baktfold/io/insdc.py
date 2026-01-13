@@ -418,6 +418,7 @@ def write_features(data: dict, features: Sequence[dict], genbank_output_path: Pa
     prokka = False
 
     sequence_list = build_biopython_sequence_list(data, features, prokka, euk)
+    
     with genbank_output_path.open('wt', encoding='utf-8') as fh:
         logger.info(f'write GenBank: path={genbank_output_path}')
         SeqIO.write(sequence_list, fh, format='genbank')
