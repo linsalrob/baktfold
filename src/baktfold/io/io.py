@@ -32,7 +32,9 @@ def write_foldseek_tophit(tophit_df: pd.DataFrame, pdb_tophit_path: Path):
     tophit_df.to_csv(pdb_tophit_path, sep="\t", index=False)
 
 
-def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequence: Sequence[dict] , output: Path, prefix: str, custom_db: bool, euk: bool, has_duplicate_locus: bool):
+def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequence: Sequence[dict] , 
+                        output: Path, prefix: str, custom_db: bool, euk: bool, has_duplicate_locus: bool,
+                        fast: bool):
     """
     Writes the bakta outputs to a given path.
 
@@ -45,6 +47,7 @@ def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequen
       custom_db (bool): A boolean indicating whether a custom database is used.
       euk (bool): A boolean indicating whether the sequences are eukaryotic.
       has_duplicate_locus (bool): A boolean indicating whether there are duplicate loci.
+      fast (bool): If True, skips AFDB step
 
     Returns:
       None.
@@ -93,6 +96,11 @@ def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequen
         header_columns = ['Locus', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH']
         if has_duplicate_locus:
             header_columns = ['Locus', 'ID', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH']
+
+    # Remove 'AFDBClusters' if fast is True
+    if fast:
+        header_columns = [col for col in header_columns if col != 'AFDBClusters']
+
     logger.info(f'Exporting annotations (TSV) to: {annotations_path}')
 
     selected_features = []
@@ -104,7 +112,7 @@ def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequen
                 selected_features.append(feat)
 
 
-    tsv.write_protein_features(selected_features, header_columns, annotations_path, custom_db, has_duplicate_locus)
+    tsv.write_protein_features(selected_features, header_columns, annotations_path, custom_db, has_duplicate_locus, fast=fast)
     
     
 
@@ -140,7 +148,7 @@ def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequen
 
 
 
-def write_bakta_proteins_outputs(aas: Sequence[dict], output: Path, prefix: str, custom_db: bool):
+def write_bakta_proteins_outputs(aas: Sequence[dict], output: Path, prefix: str, custom_db: bool, fast: bool):
     """
     Writes the bakta protein outputs to a given path.
 
@@ -149,6 +157,7 @@ def write_bakta_proteins_outputs(aas: Sequence[dict], output: Path, prefix: str,
       output (Path): The path to save the bakta protein outputs to.
       prefix (str): The prefix to use for the bakta protein outputs.
       custom_db (bool): A boolean indicating whether a custom database is used.
+      fast (bool): If True, skips AFDB step
 
     Returns:
       None.
@@ -163,8 +172,13 @@ def write_bakta_proteins_outputs(aas: Sequence[dict], output: Path, prefix: str,
         header_columns = ['ID', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH', 'Custom_DB']
     else:
         header_columns = ['ID', 'Length', 'Product', 'Swissprot', 'AFDBClusters', 'PDB', 'CATH']
+
+    if fast:
+        header_columns = [col for col in header_columns if col != 'AFDBClusters']
+
+
     logger.info(f'Exporting annotations (TSV) to: {annotations_path}')
-    tsv.write_protein_features(aas, header_columns, annotations_path, custom_db, has_duplicate_locus=False)
+    tsv.write_protein_features(aas, header_columns, annotations_path, custom_db, has_duplicate_locus=False, fast=fast)
 
 
     # do i combine the tophits tsvs, sort by column, add a column for db and put out as one tsv
