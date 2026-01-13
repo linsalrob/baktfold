@@ -365,6 +365,7 @@ def convert_gene_feature(feature, rec, id):
         "strand": strand,
         "db_xrefs": [so.SO_GENE.id], 
         "id": id,
+        "locus": locus_tag
     }
 
 
@@ -402,7 +403,7 @@ def convert_gene_feature(feature, rec, id):
     
 
     multi_valued = {"experiment", "function",  "gene_synonym",  "inference", "note" }
-    single_valued = {"allele",  "locus_tag", "map",  "old_locus_tag", "operon", "phenotype", "standard_name"}
+    single_valued = {"allele",  "map",  "old_locus_tag", "operon", "phenotype", "standard_name"}
 
     qualifiers = feature.qualifiers
 
@@ -454,6 +455,8 @@ def convert_mrna_feature(feature, rec, id):
 
     qualifiers = feature.qualifiers
 
+    locus_tag = feature.qualifiers.get("locus_tag", [None])[0]
+
 
 
     mrna_entry = {
@@ -466,6 +469,7 @@ def convert_mrna_feature(feature, rec, id):
         "strand": strand,
         "db_xrefs": [so.SO_MRNA.id],        
         "id": id,
+        "locus": locus_tag
     }
 
 
@@ -549,7 +553,7 @@ def convert_assembly_gap_feature(feature, rec, id):
         "stop": stop,
         "strand": strand,
         "length": length,
-        "id": id
+        "id": id,
     }
 
     # no need to add estimated length separately - it is covered by length in the json 
