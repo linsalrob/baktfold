@@ -35,13 +35,13 @@ RE_GENE_SUSPECT_CHARS = re.compile(r'[\?]', flags=re.DOTALL)
 RE_GENE_SYMBOL = re.compile(r'[a-z]{3}[A-Z][0-9]?')
 
 
-def combine_annotation(feature: dict):
+def combine_annotation(feature: dict, fast: bool):
     """
     Combines annotation information from different sources into a single feature.
 
     Args:
       feature (dict): The feature to combine annotation for.
-
+      fast (bool): If True, skips AFDB
     Returns:
       None
 
@@ -73,7 +73,10 @@ def combine_annotation(feature: dict):
             pstc = [pstc]
         
         # afdb
-        afdb_entry = next((p for p in pstc if isinstance(p, dict) and p.get('source') == 'afdb'), None)
+        afdb_entry = None if fast else next(
+            (p for p in pstc if isinstance(p, dict) and p.get('source') == 'afdb'),
+            None
+        )
         # swissprot
         swissprot_entry = next((p for p in pstc if isinstance(p, dict) and p.get('source') == 'swissprot'), None)
         # pdb
@@ -117,7 +120,8 @@ def combine_annotation(feature: dict):
                 eid = entry.get('id')
                 if eid:
                     if src == 'afdb':
-                        db_xrefs.append(f"afdb_v6:afdbclusters_{eid}")
+                        if not fast:
+                            db_xrefs.append(f"afdb_v6:afdbclusters_{eid}")
                     elif src == 'swissprot':
                         db_xrefs.append(f"afdb_v6:swissprot_{eid}")
                     elif src == 'pdb':

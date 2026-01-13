@@ -209,6 +209,11 @@ def compare_options(func):
             "--euk",
             is_flag=True,
             help="Eukaryotic input genome.",
+        ),
+        click.option(
+            "--fast",
+            is_flag=True,
+            help="Skips Foldseek search against AFDB Clusters."
         )
     ]
     for option in reversed(options):
@@ -301,6 +306,7 @@ def run(
     foldseek_gpu,
     all_proteins,
     euk,
+    fast,
     **kwargs,
 ):
     """baktfold predict then comapare all in one - GPU recommended"""
@@ -335,7 +341,8 @@ def run(
         "--custom-annotations": custom_annotations,
         "--foldseek-gpu": foldseek_gpu,
         "--all-proteins": all_proteins,
-        "--euk": euk
+        "--euk": euk,
+        "--fast": fast
     }
 
     # initial logging etc
@@ -456,7 +463,8 @@ def run(
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
         custom_annotations=custom_annotations,
-        has_duplicate_locus=has_duplicate_locus
+        has_duplicate_locus=has_duplicate_locus,
+        fast=fast
     )
 
     #####
@@ -464,7 +472,7 @@ def run(
     #####
 
     for cds in hypotheticals:
-        anno.combine_annotation(cds)  # add on PSTC annotations and mark hypotheticals
+        anno.combine_annotation(cds, fast)  # add on PSTC annotations and mark hypotheticals
 
     # recombine updated and existing features
     combined_features = non_hypothetical_features + hypotheticals  # recombine
@@ -568,6 +576,7 @@ def proteins(
     custom_db,
     foldseek_gpu,
     custom_annotations,
+    fast,
     **kwargs,
 ):
     """baktfold proteins-predict then comapare all in one - GPU recommended"""
@@ -600,7 +609,8 @@ def proteins(
         "--extra-foldseek_params": extra_foldseek_params,
         "--custom-db": custom_db,
         "--foldseek-gpu": foldseek_gpu,
-        "--custom-annotations": custom_annotations
+        "--custom-annotations": custom_annotations,
+        "--fast": fast
     }
 
     # initial logging etc
@@ -694,7 +704,8 @@ def proteins(
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
         custom_annotations=custom_annotations,
-        has_duplicate_locus=False
+        has_duplicate_locus=False,
+        fast=fast
     )
 
     #####
@@ -702,7 +713,7 @@ def proteins(
     #####
 
     for aa in aas:
-        anno.combine_annotation(aa)  # add on PSTC annotations and mark hypotheticals
+        anno.combine_annotation(aa, fast)  # add on PSTC annotations and mark hypotheticals
 
 
     ####
@@ -960,6 +971,7 @@ def compare(
     foldseek_gpu,
     all_proteins,
     euk,
+    fast,
     **kwargs,
 ):
     """Runs Foldseek vs baktfold db"""
@@ -990,7 +1002,8 @@ def compare(
         "--custom-annotations": custom_annotations,
         "--foldseek-gpu": foldseek_gpu,
         "--all-proteins": all_proteins,
-        "--euk": euk
+        "--euk": euk,
+        "--fast": fast
     }
 
     # initial logging etc
@@ -1075,12 +1088,13 @@ def compare(
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
         custom_annotations=custom_annotations,
-        has_duplicate_locus=has_duplicate_locus
+        has_duplicate_locus=has_duplicate_locus,
+        fast=fast
     )
 
 
     for cds in hypotheticals:
-        anno.combine_annotation(cds)  # add on PSTC annotations and mark hypotheticals
+        anno.combine_annotation(cds, fast)  # add on PSTC annotations and mark hypotheticals
 
     # recombine updated and existing features
     combined_features = non_hypothetical_features + hypotheticals  # recombine
@@ -1322,6 +1336,7 @@ def proteins_compare(
     custom_db,
     custom_annotations,
     foldseek_gpu,
+    fast,
     **kwargs,
 ):
     """Runs Foldseek vs baktfold db on proteins input"""
@@ -1351,6 +1366,7 @@ def proteins_compare(
         "--custom-db": custom_db,
         "--custom-annotations": custom_annotations,
         "--foldseek-gpu": foldseek_gpu,
+        "--fast": fast
     }
 
 
@@ -1412,7 +1428,8 @@ def proteins_compare(
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
         custom_annotations=custom_annotations,
-        has_duplicate_locus=False
+        has_duplicate_locus=False,
+        fast=fast
     )
 
     #####
@@ -1420,7 +1437,7 @@ def proteins_compare(
     #####
 
     for aa in aas:
-        anno.combine_annotation(aa)  # add on PSTC annotations and mark hypotheticals
+        anno.combine_annotation(aa, fast)  # add on PSTC annotations and mark hypotheticals
 
 
 
