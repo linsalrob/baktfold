@@ -42,6 +42,9 @@ AMINO_ACID_DICT = {
     'sec': ('U', so.SO_TRNA_SELCYS)
 }
 
+# global variable for the genome-level random string - backup if no locus_tags in input genbank
+GENOME_RANDOM_BACKUP_LOCUSTAG_STR = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
 def add_optional_qualifiers(entry, qualifiers, single_valued=None, multi_valued=None):
     """
     Add optional INSDC qualifiers to a feature entry dict in Bakta style.
@@ -110,7 +113,7 @@ def convert_cds_feature(feature, seq_record, translation_table, id):
     product = qualifiers.get("product", [None])[0]
 
     # fall back to start_stop_strand if there is no locus tag
-    locus_tag = qualifiers.get('locus') or f"{start}_{stop}_{strand}"
+    locus_tag = qualifiers.get('locus') or f"{GENOME_RANDOM_BACKUP_LOCUSTAG_STR}_{start}_{stop}"
 
     note = qualifiers.get("note", [None])[0]
     locus = locus_tag
@@ -266,7 +269,7 @@ def convert_trna_feature(feature, seq_record, id):
     # ------------ Basic qualifiers ------------
     product = feature.qualifiers.get("product", [None])[0]
     # fall back to start_stop_strand if there is no locus tag
-    locus_tag = qualifiers.get('locus') or f"{start}_{stop}_{strand}"
+    locus_tag = qualifiers.get('locus') or f"{GENOME_RANDOM_BACKUP_LOCUSTAG_STR}_{start}_{stop}"
 
     # ------------ amino acid ------------
     # Prokka product examples:
@@ -403,7 +406,7 @@ def convert_gene_feature(feature, rec, id):
     qualifiers = feature.qualifiers
 
     # fall back to start_stop_strand if there is no locus tag
-    locus_tag = qualifiers.get('locus') or f"{start}_{stop}_{strand}"
+    locus_tag = qualifiers.get('locus') or f"{GENOME_RANDOM_BACKUP_LOCUSTAG_STR}_{start}_{stop}"
     
 
     gene_entry = {
@@ -505,7 +508,7 @@ def convert_mrna_feature(feature, rec, id):
     qualifiers = feature.qualifiers
 
    # fall back to start_stop_strand if there is no locus tag
-    locus_tag = qualifiers.get('locus') or f"{start}_{stop}_{strand}"
+    locus_tag = qualifiers.get('locus') or f"{GENOME_RANDOM_BACKUP_LOCUSTAG_STR}_{start}_{stop}"
 
 
 
@@ -735,7 +738,7 @@ def convert_utr_region_feature(feature, rec, id, three):
     note = qualifiers.get("note", [None])[0]
 
     # fall back to start_stop_strand if there is no locus tag
-    locus_tag = qualifiers.get('locus') or f"{start}_{stop}_{strand}"
+    locus_tag = qualifiers.get('locus') or f"{GENOME_RANDOM_BACKUP_LOCUSTAG_STR}_{start}_{stop}"
 
     # always just take the positive strand to get the NT seq (UTR region)
     seq =  str(rec.seq)
