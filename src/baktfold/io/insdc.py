@@ -15,6 +15,36 @@ import baktfold.bakta.so as so
 
 # log = logging.getLogger('INSDC')
 
+def move_product_to_note_if_exists(qualifiers):
+    """
+    If a 'product' qualifier exists, append it to 'note' and remove 'product'.
+
+    Designed for the eukaryotic entries
+
+    Parameters
+    ----------
+    qualifiers : dict
+        Feature qualifiers dictionary (values are usually lists).
+
+    Returns
+    -------
+    None
+        Modifies qualifiers in place.
+    """
+    product = qualifiers.get("product")
+    if not product:
+        return
+
+    # Ensure note exists and is a list
+    if "note" not in qualifiers:
+        qualifiers["note"] = []
+
+    if isinstance(product, list):
+        qualifiers["note"].extend(product)
+    else:
+        qualifiers["note"].append(product)
+
+    qualifiers.pop("product", None)
 
 def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka, euk):
 
@@ -227,7 +257,7 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka, 
                         pos = f"complement({pos})"
                     qualifiers['transl_except']=f"(pos:{pos},aa:{ex['aa']})"
                     qualifiers['note'].append(f"codon on position {ex['codon_position']} is a {ex['type']} codon")
-                if(bc.FEATURE_SIGNAL_PEPTIDE in feature):
+                if(bc.FEATURE_SIGNAL_PEPTIDE in feature) and (not euk):
                     sigpep_qualifiers = {}
                     sigpep_qualifiers['locus_tag'] = feature['locus']
                     sigpep_qualifiers['inference'] = 'ab initio prediction:DeepSig:1.2'
@@ -290,19 +320,53 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka, 
                 insdc_feature_type = bc.INSDC_FEATURE_REPEAT_REGION
                 qualifiers['note'].append(feature['product'])
                 qualifiers.pop('product', None)
-            elif(feature['type'] == bc.FEATURE_REPEAT): # for euks
+            elif(feature['type'] == bc.FEATURE_REPEAT) and (euk): # for euks
                 insdc_feature_type = bc.INSDC_FEATURE_REPEAT_REGION
                 qualifiers['rpt_family'] = feature['family']
                 qualifiers['note'].append(feature['product'])
                 qualifiers.pop('product', None)
-            elif(feature['type'] == bc.FEATURE_5UTR): # for euks
+            elif(feature['type'] == bc.FEATURE_5UTR) and (euk): # for euks
                 insdc_feature_type = bc.INSDC_FEATURE_5UTR
-                qualifiers['note'].append(feature['product']) 
-                qualifiers.pop('product', None)
-            elif(feature['type'] == bc.FEATURE_3UTR): # for euks
+                move_product_to_note_if_exists(qualifiers)
+            elif(feature['type'] == bc.FEATURE_3UTR) and (euk): # for euks
                 insdc_feature_type = bc.INSDC_FEATURE_3UTR
+                move_product_to_note_if_exists(qualifiers)
+            elif(feature['type'] == bc.FEATURE_MISC_RNA) and (euk): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_MISC_RNA
+                move_product_to_note_if_exists(qualifiers)
+            elif(feature['type'] == bc.FEATURE_EXON) and (euk): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_EXON
+                move_product_to_note_if_exists(qualifiers)
+            elif(feature['type'] == bc.FEATURE_MAT_PEPTIDE) and (euk): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_MAT_PEPTIDE
+                move_product_to_note_if_exists(qualifiers)
+            elif(feature['type'] == bc.FEATURE_MOBILE_ELEMENT) and (euk): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_MOBILE_ELEMENT
+                move_product_to_note_if_exists(qualifiers)
+            elif(feature['type'] == bc.INSDC_FEATURE_MISC_FEATURE) and (euk): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_MISC_FEATURE
+                move_product_to_note_if_exists(qualifiers)
+            elif(feature['type'] == bc.FEATURE_PRECURSOR_RNA) and (euk): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_PRECURSOR_RNA
+                move_product_to_note_if_exists(qualifiers)          
+            elif(feature['type'] == bc.FEATURE_PROPEPTIDE) and (euk): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_PROPEPTIDE
+                move_product_to_note_if_exists(qualifiers)
+            elif(feature['type'] == bc.FEATURE_PROTEIN_BIND) and (euk): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_PROTEIN_BIND
+                move_product_to_note_if_exists(qualifiers)
+            elif(feature['type'] == bc.INSDC_FEATURE_REGULATORY) and (euk): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_REGULATORY
                 qualifiers['note'].append(feature['product']) 
-                qualifiers.pop('product', None)
+                qualifiers.pop('product', None)  
+            elif(feature['type'] == bc.FEATURE_SIGNAL_PEPTIDE) and (euk): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_SIGNAL_PEPTIDE
+                move_product_to_note_if_exists(qualifiers)
+            elif(feature['type'] == bc.FEATURE_TRANSIT_PEPTIDE): # for euks
+                insdc_feature_type = bc.INSDC_FEATURE_TRANSIT_PEPTIDE
+                move_product_to_note_if_exists(qualifiers)           
+            
+
             strand = None
             if(feature['strand'] == bc.STRAND_FORWARD):
                 strand = 1
@@ -410,13 +474,12 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka, 
     return sequence_list
 
 
-def write_features(data: dict, features: Sequence[dict], genbank_output_path: Path, embl_output_path: Path, euk: bool = False):
+def write_features(data: dict, features: Sequence[dict], genbank_output_path: Path, embl_output_path: Path, prokka: bool = False, euk: bool = False):
     logger.info(f'prepare: genbank={genbank_output_path}, embl={embl_output_path}')
 
     # fix later
-    prokka = False
-
     sequence_list = build_biopython_sequence_list(data, features, prokka, euk)
+    
     with genbank_output_path.open('wt', encoding='utf-8') as fh:
         logger.info(f'write GenBank: path={genbank_output_path}')
         SeqIO.write(sequence_list, fh, format='genbank')

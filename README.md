@@ -6,8 +6,7 @@
 [![Downloads](https://static.pepy.tech/badge/baktfold)](https://pepy.tech/project/baktfold)
 
 # Baktfold
-
-Rapid &amp; standardized annotation of bacterial genomes, MAGs &amp; plasmids using protein structural information
+Rapid &amp; standardized annotation of bacterial genomes, MAGs &amp; plasmids using protein structural information 
 
 Baktfold is a sensitive annotation tool for bacterial genomes, MAGs &amp; plasmids genomes using protein structural homology.
 

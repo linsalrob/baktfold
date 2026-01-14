@@ -47,16 +47,20 @@ def write_features(sequences: Sequence[dict], features_by_sequence: Dict[str, di
                     product = f"(3' truncated) {product}"
                 elif(feat.get('truncated', '') == bc.FEATURE_END_BOTH):
                     product = f"(partial) {product}"
+
+                def s(x):
+                    return '' if x is None else str(x)
+                
                 fh.write('\t'.join(
                     [
                         seq_id,
                         feat_type,
                         str(feat['start']),
                         str(feat['stop']),
-                        feat['strand'],
-                        feat.get('locus', ''),
-                        str(gene or ''),        # handles None → ''
-                        str(product or ''),     # handles None → ''
+                        str(feat['strand']),
+                        s(feat.get('locus')), # handles None → ''
+                        s(gene),        # handles None → ''
+                        s(product),     # handles None → ''
                         ', '.join(sorted(feat.get('db_xrefs', [])))
                     ])
                 )
@@ -157,7 +161,7 @@ def write_feature_inferences(sequences: Sequence[dict], features_by_sequence: Di
                     fh.write('\n')
     return
 
-def map_aa_columns(feat: dict, custom_db: bool, has_duplicate_locus: bool) -> Sequence[str]:
+def map_aa_columns(feat: dict, custom_db: bool, has_duplicate_locus: bool, fast: bool) -> Sequence[str]:
     """
     Maps amino acid columns.
 
@@ -165,6 +169,7 @@ def map_aa_columns(feat: dict, custom_db: bool, has_duplicate_locus: bool) -> Se
       feat (dict): The dictionary containing the features.
       custom_db (bool): A boolean indicating whether a custom database is used.
       has_duplicate_locus (bool): A boolean indicating whether there are duplicate loci.
+      fast (bool): A boolean indicating whether AFDBclusters Foldseek search should be skipped
 
     Returns:
       Sequence[str]: A sequence of strings containing the mapped amino acid columns.
@@ -219,7 +224,14 @@ def map_aa_columns(feat: dict, custom_db: bool, has_duplicate_locus: bool) -> Se
         str(feat['length']),
         feat['product'],
         swissprot,
-        afdbclust,
+    ])
+
+    # Only add AFDBClusters if not in fast mode
+    if not fast:
+        row.append(afdbclust)
+
+    # Always add these
+    row.extend([
         pdb,
         cath,
     ])
@@ -232,7 +244,7 @@ def map_aa_columns(feat: dict, custom_db: bool, has_duplicate_locus: bool) -> Se
 
 
 
-def write_protein_features(features: Sequence[dict], header_columns: Sequence[str], tsv_path: Path, custom_db: bool, has_duplicate_locus: bool):
+def write_protein_features(features: Sequence[dict], header_columns: Sequence[str], tsv_path: Path, custom_db: bool, has_duplicate_locus: bool, fast: bool):
     """Export protein features in TSV format."""
     logger.info(f'write protein feature tsv: path={tsv_path}')
 
@@ -242,7 +254,7 @@ def write_protein_features(features: Sequence[dict], header_columns: Sequence[st
         fh.write('\t'.join(header_columns))
         fh.write('\n')
         for feat in features:
-            columns = map_aa_columns(feat, custom_db, has_duplicate_locus)
+            columns = map_aa_columns(feat, custom_db, has_duplicate_locus, fast)
             fh.write('\t'.join(columns))
             fh.write('\n')
     return

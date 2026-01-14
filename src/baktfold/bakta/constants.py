@@ -121,8 +121,14 @@ FEATURE_GENE = 'gene'
 FEATURE_REPEAT = 'repeat_region'
 FEATURE_5UTR =  "5'UTR" 
 FEATURE_3UTR = "3'UTR"
-
-
+FEATURE_MISC_RNA = "misc_RNA"
+FEATURE_EXON = "exon"
+FEATURE_MAT_PEPTIDE = "mat_peptide"
+FEATURE_MOBILE_ELEMENT = 'mobile_element'
+FEATURE_PRECURSOR_RNA = "precursor_RNA"
+FEATURE_PROPEPTIDE = "propeptide"
+FEATURE_PROTEIN_BIND = "protein_bind"
+FEATURE_TRANSIT_PEPTIDE = "transit_peptide"
 ############################################################################
 # INSDC feature tags
 ############################################################################
@@ -174,7 +180,12 @@ INSDC_FEATURE_SOURCE = 'source'
 INSDC_FEATURE_GENE = 'gene'
 INSDC_FEATURE_5UTR = "5'UTR"
 INSDC_FEATURE_3UTR = "3'UTR"
-
+INSDC_FEATURE_EXON = "exon"
+INSDC_FEATURE_MAT_PEPTIDE = "mat_peptide"
+INSDC_FEATURE_PRECURSOR_RNA = "precursor_RNA"
+INSDC_FEATURE_PROPEPTIDE = "propeptide"
+INSDC_FEATURE_PROTEIN_BIND = "protein_bind"
+INSDC_FEATURE_TRANSIT_PEPTIDE = "transit_peptide"
 
 ############################################################################
 # Feature ends

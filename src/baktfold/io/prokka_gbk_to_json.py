@@ -474,29 +474,162 @@ def convert_assembly_gap_feature(feature, rec, id):
 
     return gap_entry
 
+
 def build_bakta_sequence_entry(rec):
     """
-    Convert a Prokka SeqRecord into a Bakta-style sequence entry.
+    Convert a  SeqRecord into a Bakta-style sequence entry.
     Missing fields are filled with None.
     """
 
     seq = str(rec.seq)
 
+    # -----------------------------------------
+    # Extract source feature qualifiers - genbank always has source field
+    # -----------------------------------------
+    source_feat = next((f for f in rec.features if f.type == "source"), None)
+
+    source_qualifiers = {}
+
+    # Defaults (None) for all fields
+    mol_type = None
+    organism = None
+    strain = None
+    db_xref = None
+    note = None
+
+    plasmid = None
+    chromosome = None
+    completeness_hint = None
+
+    if source_feat:
+        q = source_feat.qualifiers
+
+        mol_type = q.get("mol_type", [None])[0]
+        organism = q.get("organism", [None])[0]
+        strain = q.get("strain", [None])[0]
+        note = q.get("note", [None])[0]
+
+        if "db_xref" in q:
+            val = q["db_xref"]
+            db_xref = val[0] if len(val) == 1 else val
+
+        plasmid = q.get("plasmid", [None])[0]
+        chromosome = q.get("chromosome", [None])[0]
+        completeness_hint = q.get("completeness", [None])[0]
+            
+    # -----------------------------------------
+    # Infer topology
+    # -----------------------------------------
+    topology = rec.annotations.get("topology")
+    if topology not in {"linear", "circular"}:
+        topology = "linear"
+
+    # -----------------------------------------
+    # Infer type
+    # -----------------------------------------
+    if plasmid is not None or "plasmid" in rec.annotations:
+        seq_type = "plasmid"
+    elif chromosome is not None or "chromosome" in rec.annotations:
+        seq_type = "chromosome"
+    else:
+        seq_type = "contig"
+
+    # -----------------------------------------
+    # Infer completeness (conservative)
+    # -----------------------------------------
+    complete = False
+
+    if topology == "circular":
+        complete = True
+    elif completeness_hint is not None and completeness_hint.lower() == "complete":
+        complete = True
+    elif note and "complete genome" in note.lower():
+        complete = True
+
+    # -----------------------------------------
+    # Infer genetic codefor description
+    # -----------------------------------------
+    gcode = None
+
+    if "genetic_code" in rec.annotations:
+        gcode = rec.annotations["genetic_code"]
+    elif "gcode" in rec.annotations:
+        gcode = rec.annotations["gcode"]
+    elif source_feat and "transl_table" in source_feat.qualifiers:
+        gcode = source_feat.qualifiers["transl_table"][0]
+
+    # Conservative fallback to 11 for prokka
+    if gcode is None:
+        gcode = 11 
+
+    description_parts = [
+        f"[gcode={gcode}]",
+        f"[topology={topology}]",
+    ]
+
+    description = " ".join(description_parts)
+
+    # -----------------------------------------
+    # Build entry
+    # -----------------------------------------
     entry = {
-        "id": rec.id,                                 # Prokka contig name
-        "description": None,                          # Prokka does not have topology completeness etc 
-        "nt": seq,                                    # Nucleotide sequence
-        "length": len(seq),                           
-        "complete": None,                             # Prokka does not define completeness
-        "type": None,                                 # plasmid/chromosome not known
-        "topology": rec.annotations["topology"],                             # circular/linear unknown
-        "simple_id": rec.id,                          # Same as id (placeholder)
-        "orig_id": rec.id,                            # No separate original ID from Prokka
-        "orig_description": None,          # Same as description
-        "name": None                                  
+        "id": rec.id,
+        "description": description,
+        "nt": seq,
+        "length": len(seq),
+        "complete": complete,
+        "type": seq_type,
+        "topology": topology,
+        "simple_id": rec.id,
+        "orig_id": rec.id,
+        "orig_description": None,
     }
 
+    # -----------------------------------------
+    # Add source qualifiers if present
+    # -----------------------------------------
+    if organism is not None:
+        entry["organism"] = organism
+    if mol_type is not None:
+        entry["mol_type"] = mol_type
+    if strain is not None:
+        entry["strain"] = strain
+    if db_xref is not None:
+        entry["db_xref"] = db_xref
+    if note is not None:
+        entry["note"] = note
+
+
+    # this is from bakta
+    # "id": "contig_1",
+    # "description": "[gcode=11] [topology=linear]",
+    # "nt": "AT"
+    # "length": 5165988,
+    # "complete": false,
+    # "type": "contig",
+    # "topology": "linear",
+    # "simple_id": "contig_1",
+    # "orig_id": "GCF_002368115_000000000001",
+    # "orig_description": ""
+
+    # Add source qualifiers only if they exist
+    if organism is not None:
+        entry["organism"] = organism
+
+    if mol_type is not None:
+        entry["mol_type"] = mol_type
+
+    if strain is not None:
+        entry["strain"] = strain
+
+    if db_xref is not None:
+        entry["db_xref"] = db_xref
+
+    if note is not None:
+        entry["note"] = note
+
     return entry
+
 
 
 def parse_prokka_version(record):

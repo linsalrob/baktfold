@@ -203,7 +203,12 @@ def compare_options(func):
         click.option(
             "--euk",
             is_flag=True,
-            help="Eukaryotic input genome"
+            help="Eukaryotic input genome.",
+        ),
+        click.option(
+            "--fast",
+            is_flag=True,
+            help="Skips Foldseek search against AFDB Clusters."
         )
     ]
     for option in reversed(options):
@@ -296,6 +301,7 @@ def run(
     foldseek_gpu,
     all_proteins,
     euk,
+    fast,
     **kwargs,
 ):
     """baktfold predict then comapare all in one - GPU recommended"""
@@ -330,7 +336,8 @@ def run(
         "--custom-annotations": custom_annotations,
         "--foldseek-gpu": foldseek_gpu,
         "--all-proteins": all_proteins,
-        "--euk": euk
+        "--euk": euk,
+        "--fast": fast
     }
 
     # initial logging etc
@@ -451,7 +458,8 @@ def run(
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
         custom_annotations=custom_annotations,
-        has_duplicate_locus=has_duplicate_locus
+        has_duplicate_locus=has_duplicate_locus,
+        fast=fast
     )
 
     #####
@@ -459,7 +467,7 @@ def run(
     #####
 
     for cds in hypotheticals:
-        anno.combine_annotation(cds)  # add on PSTC annotations and mark hypotheticals
+        anno.combine_annotation(cds, fast)  # add on PSTC annotations and mark hypotheticals
 
     # recombine updated and existing features
     combined_features = non_hypothetical_features + hypotheticals  # recombine
@@ -507,7 +515,7 @@ def run(
 
 
     logger.info('writing baktfold outputs')
-    io.write_bakta_outputs(data, features, features_by_sequence, output, prefix, custom_db, euk, has_duplicate_locus)
+    io.write_bakta_outputs(data, features, features_by_sequence, output, prefix, custom_db, euk, has_duplicate_locus, fast)
 
     # cleanup the temp files
     if not keep_tmp_files:
@@ -563,6 +571,7 @@ def proteins(
     custom_db,
     foldseek_gpu,
     custom_annotations,
+    fast,
     **kwargs,
 ):
     """baktfold proteins-predict then comapare all in one - GPU recommended"""
@@ -595,7 +604,8 @@ def proteins(
         "--extra-foldseek_params": extra_foldseek_params,
         "--custom-db": custom_db,
         "--foldseek-gpu": foldseek_gpu,
-        "--custom-annotations": custom_annotations
+        "--custom-annotations": custom_annotations,
+        "--fast": fast
     }
 
     # initial logging etc
@@ -689,7 +699,8 @@ def proteins(
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
         custom_annotations=custom_annotations,
-        has_duplicate_locus=False
+        has_duplicate_locus=False,
+        fast=fast
     )
 
     #####
@@ -697,7 +708,7 @@ def proteins(
     #####
 
     for aa in aas:
-        anno.combine_annotation(aa)  # add on PSTC annotations and mark hypotheticals
+        anno.combine_annotation(aa, fast)  # add on PSTC annotations and mark hypotheticals
 
 
     ####
@@ -719,7 +730,7 @@ def proteins(
     # - remove temp directory
     ############################################################################
     
-    io.write_bakta_proteins_outputs(aas, output, prefix, custom_db)
+    io.write_bakta_proteins_outputs(aas, output, prefix, custom_db, fast)
 
     # cleanup the temp files
     if not keep_tmp_files:
@@ -955,6 +966,7 @@ def compare(
     foldseek_gpu,
     all_proteins,
     euk,
+    fast,
     **kwargs,
 ):
     """Runs Foldseek vs baktfold db"""
@@ -985,7 +997,8 @@ def compare(
         "--custom-annotations": custom_annotations,
         "--foldseek-gpu": foldseek_gpu,
         "--all-proteins": all_proteins,
-        "--euk": euk
+        "--euk": euk,
+        "--fast": fast
     }
 
     # initial logging etc
@@ -1070,12 +1083,13 @@ def compare(
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
         custom_annotations=custom_annotations,
-        has_duplicate_locus=has_duplicate_locus
+        has_duplicate_locus=has_duplicate_locus,
+        fast=fast
     )
 
 
     for cds in hypotheticals:
-        anno.combine_annotation(cds)  # add on PSTC annotations and mark hypotheticals
+        anno.combine_annotation(cds, fast)  # add on PSTC annotations and mark hypotheticals
 
     # recombine updated and existing features
     combined_features = non_hypothetical_features + hypotheticals  # recombine
@@ -1125,7 +1139,7 @@ def compare(
     # bakta output module
     ####
     logger.info('writing baktfold outputs')
-    io.write_bakta_outputs(data,features, features_by_sequence, output, prefix, custom_db, euk, has_duplicate_locus)
+    io.write_bakta_outputs(data,features, features_by_sequence, output, prefix, custom_db, euk, has_duplicate_locus, fast)
 
     # cleanup the temp files
     if not keep_tmp_files:
@@ -1317,6 +1331,7 @@ def proteins_compare(
     custom_db,
     custom_annotations,
     foldseek_gpu,
+    fast,
     **kwargs,
 ):
     """Runs Foldseek vs baktfold db on proteins input"""
@@ -1346,6 +1361,7 @@ def proteins_compare(
         "--custom-db": custom_db,
         "--custom-annotations": custom_annotations,
         "--foldseek-gpu": foldseek_gpu,
+        "--fast": fast
     }
 
 
@@ -1407,7 +1423,8 @@ def proteins_compare(
         custom_db=custom_db,
         foldseek_gpu=foldseek_gpu,
         custom_annotations=custom_annotations,
-        has_duplicate_locus=False
+        has_duplicate_locus=False,
+        fast=fast
     )
 
     #####
@@ -1415,7 +1432,7 @@ def proteins_compare(
     #####
 
     for aa in aas:
-        anno.combine_annotation(aa)  # add on PSTC annotations and mark hypotheticals
+        anno.combine_annotation(aa, fast)  # add on PSTC annotations and mark hypotheticals
 
 
 
@@ -1438,7 +1455,7 @@ def proteins_compare(
     # - remove temp directory
     ############################################################################
     
-    io.write_bakta_proteins_outputs(aas, output, prefix, custom_db)
+    io.write_bakta_proteins_outputs(aas, output, prefix, custom_db, fast)
 
 
     # cleanup the temp files
@@ -1579,7 +1596,12 @@ def convert_options(func):
             "-f",
             "--force",
             is_flag=True,
-            help="Force overwrites output file",
+            help="Force overwrites the output file",
+        ),
+        click.option(
+            "--verbose",
+            is_flag=True,
+            help="Verbose output",
         )
     ]
     for option in reversed(options):
@@ -1653,6 +1675,7 @@ def convert_euk(
     input,
     outfile,
     force,
+    verbose,
     **kwargs,
 ):
     """(Experimental) Converts eukaryotic GenBank to Bakta format json"""
@@ -1668,6 +1691,7 @@ def convert_euk(
         "--input": input,
         "--outfile": outfile,
         "--force": force,
+        "--verbose": verbose
     }
 
     # initial logging etc
@@ -1681,7 +1705,7 @@ def convert_euk(
         f"This will be saved as {outfile}."
     )
 
-    eukaryotic_gbk_to_json(records, outfile)
+    eukaryotic_gbk_to_json(records, outfile, verbose)
 
     logger.info(f"Conversion successful.")
     logger.info(f"Bakta format JSON → {outfile}")
