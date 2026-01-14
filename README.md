@@ -105,7 +105,7 @@ We will add other input formats eventually, but we would always recommend runnin
 Running Baktfold on Bakta results (using a dummy test example JSON `assembly.json` file:
 
 ```bash
-# default (CPU-only)
+# default (CPU-only or non-NVIDIA GPU e.g. Mac or AMD)
 baktfold run -i tests/test_data/assembly_bakta_output/assembly.json  -o baktfold_output -f -t 8 -d baktfold_db   
 # with Nvidia GPU
 baktfold run -i tests/test_data/assembly_bakta_output/assembly.json  -o baktfold_output -f -t 8 -d baktfold_db   --foldseek-gpu
@@ -114,7 +114,7 @@ baktfold run -i tests/test_data/assembly_bakta_output/assembly.json  -o baktfold
 Running Baktfold on protein sequences (using a dummy test example Fasta `.faa` file):
 
 ```bash
-# default (CPU-only)
+# default (CPU-only or non-NVIDIA GPU e.g. Mac or AMD)
 baktfold proteins -i tests/test_data/assembly.hypotheticals.faa  -o baktfold_proteins_output -f -t 8 -d baktfold_db   
 # with Nvidia GPU 
 baktfold proteins -i tests/test_data/assembly.hypotheticals.faa  -o baktfold_proteins_output -f -t 8 -d baktfold_db   --foldseek-gpu
@@ -135,16 +135,26 @@ It is recommend you run Baktfold with a GPU if you can. If you do not have a GPU
 ```bash
 Usage: baktfold [OPTIONS] COMMAND [ARGS]...
 
+  Main command line interface for baktfold.
+
+  Returns:   None
+
+  Examples:   >>> main_cli()   None
+
 Options:
   -h, --help     Show this message and exit.
   -V, --version  Show the version and exit.
 
 Commands:
+  autotune          Determines optimal batch size for 3Di prediction with...
   citation          Print the citation(s) for this tool
   compare           Runs Foldseek vs baktfold db
+  convert-euk       (Experimental) Converts eukaryotic GenBank to Bakta...
+  convert-prokka    Converts Prokka GenBank to Bakta format json
+  createdb          Creates foldseek DB from AA FASTA and 3Di FASTA input...
   install           Installs ProstT5 model and baktfold database
   predict           Uses ProstT5 to predict 3Di tokens - GPU recommended
-  proteins          baktfold protein-predict then comapare all in one - GPU...
+  proteins          baktfold proteins-predict then comapare all in one -...
   proteins-compare  Runs Foldseek vs baktfold db on proteins input
   proteins-predict  Runs ProstT5 on a multiFASTA input - GPU recommended
   run               baktfold predict then comapare all in one - GPU...
@@ -165,6 +175,11 @@ Options:
   -p, --prefix TEXT              Prefix for output files  [default: baktfold]
   -d, --database TEXT            Specific path to installed baktfold database
   -f, --force                    Force overwrites the output directory
+  --autotune                     Run autotuning to detect and automatically
+                                 use best batch size for your hardware.
+                                 Recommended only if you have a large dataset
+                                 (e.g. thousands of proteins), or else
+                                 autotuning will add rather than save runtime.
   --batch-size INTEGER           batch size for ProstT5. 1 is usually fastest.
                                  [default: 1]
   --cpu                          Use cpus only.
@@ -199,6 +214,8 @@ Options:
   --custom-annotations PATH      Custom Foldseek DB annotations, 2 column tsv.
                                  Column 1 matches the Foldseek headers, column
                                  2 is the description.
+  --euk                          Eukaryotic input genome.
+  --fast                         Skips Foldseek search against AFDB Clusters.
   -a, --all-proteins             annotate all proteins (not just
                                  hypotheticals)
 ```
@@ -209,7 +226,8 @@ The majority of outputs match [Bakta](https://github.com/oschwengers/bakta?tab=r
 
 The differences are:
 
-- `<prefix>.inference.tsv` is changed compared to Bakta. In Baktfold, this file gives a quick overview of the different Baktfold databases for which the query protein has a hit (if any)
+- `<prefix>.inference.tsv` is different compared to Bakta.
+- In Baktfold, this file gives a quick overview of the different Baktfold databases for which the query protein has a hit (if any)
 
 For example:
 
