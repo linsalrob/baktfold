@@ -240,8 +240,6 @@ def download(tarball_path: Path) -> None:
         threads (int): Number of threads for aria2c
     """
 
-
-
     tarball_path = hf_hub_download(
         repo_id="gbouras13/baktfold-db",
         repo_type="dataset",
