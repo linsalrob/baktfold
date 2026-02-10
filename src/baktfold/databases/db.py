@@ -18,7 +18,10 @@ CURRENT_DB_VERSION: str = "0.0.1"
 # to hold information about the different DBs
 VERSION_DICTIONARY = {
     "0.0.1": {
-        "md5": "b1eba2ac1a35e9c34b125887cb4aaf51",
+        "md5": [
+            "b1eba2ac1a35e9c34b125887cb4aaf51",
+            "cef0510a4c6d398df6b3b76ae2a18d01",
+        ],
         "major": 0,
         "minor": 0,
         "minorest": 1,
@@ -173,13 +176,14 @@ def install_database(db_dir: Path, foldseek_gpu: bool, threads: int) -> None:
         db_url = DICT[CURRENT_DB_VERSION]["db_url"]
         logger.info(f"Downloading baktfold DB from {db_url}")
 
-        requiredmd5 = DICT[CURRENT_DB_VERSION]["md5"]
+        requiredmd5s = DICT[CURRENT_DB_VERSION]["md5"]
         tarball = DICT[CURRENT_DB_VERSION]["tarball"]
         
         tarball_path = Path(f"{db_dir}/{tarball}")
         logdir = Path(db_dir) / "logdir"
 
         try: 
+            logger.info(f"Downloading from HuggingFace")
             download(tarball_path)
         except:
             logger.warning(
@@ -191,11 +195,12 @@ def install_database(db_dir: Path, foldseek_gpu: bool, threads: int) -> None:
 
         md5_sum = calc_md5_sum(tarball_path)
 
-        if md5_sum == requiredmd5:
+
+        if md5_sum in requiredmd5s:
             logger.info(f"baktfold database file download OK: {md5_sum}")
         else:
             logger.error(
-                f"Error: corrupt database file! MD5 should be '{requiredmd5}' but is '{md5_sum}'"
+                f"Error: corrupt database file! MD5 should be one of '{requiredmd5s}' but is '{md5_sum}'"
             )
 
         logger.info(
