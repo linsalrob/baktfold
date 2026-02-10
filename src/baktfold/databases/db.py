@@ -244,7 +244,12 @@ def download(tarball_path: Path, cache_dir: Path) -> None:
         cache_dir=f"{cache_dir}"
     )
     # move from cache_dir to the base
-    shutil.move(hf_tarball_path, tarball_path)
+    # need to get the actual path not symlink
+
+    real_tarball = Path(hf_tarball_path).resolve()
+    tarball_path.parent.mkdir(parents=True, exist_ok=True)
+
+    shutil.move(real_tarball, tarball_path)
 
     logger.info(f"Tarball saved to {tarball_path}")
 
