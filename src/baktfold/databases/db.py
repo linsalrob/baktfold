@@ -234,10 +234,7 @@ def download(tarball_path: Path) -> None:
     Download the database from the given URL using HF.
 
     Args:
-        db_url (str): The URL of the database.
         tarball_path (Path): The path where the downloaded tarball should be saved.
-        logdir (Path): The path to store logs
-        threads (int): Number of threads for aria2c
     """
 
     tarball_path = hf_hub_download(
@@ -246,7 +243,7 @@ def download(tarball_path: Path) -> None:
         filename="baktfold_db.tar.gz"  
     )
 
-    logger.info("Tarball saved to:", tarball_path)
+    logger.info(f"Tarball saved to {tarball_path}")
 
 
 def download_requests(db_url: str, tarball_path: Path):
