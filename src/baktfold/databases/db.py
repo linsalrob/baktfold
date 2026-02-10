@@ -20,7 +20,6 @@ VERSION_DICTIONARY = {
     "0.0.1": {
         "md5": [
             "b1eba2ac1a35e9c34b125887cb4aaf51",
-            "cef0510a4c6d398df6b3b76ae2a18d01",
         ],
         "major": 0,
         "minor": 0,
@@ -200,7 +199,7 @@ def install_database(db_dir: Path, foldseek_gpu: bool, threads: int) -> None:
             logger.info(f"baktfold database file download OK: {md5_sum}")
         else:
             logger.error(
-                f"Error: corrupt database file! MD5 should be one of '{requiredmd5s}' but is '{md5_sum}'"
+                f"Error: corrupt database file! MD5 should be '{requiredmd5s}' but is '{md5_sum}'"
             )
 
         logger.info(
@@ -216,6 +215,8 @@ def install_database(db_dir: Path, foldseek_gpu: bool, threads: int) -> None:
             logger.info("Some baktfold database files compatible with Foldseek-GPU are missing")
             logger.info("Creating them")
             foldseek_makepaddedseqdb(db_dir)
+
+    logger.info("Database download and processing complete")
 
 
 
