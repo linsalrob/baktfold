@@ -237,12 +237,14 @@ def download(tarball_path: Path, cache_dir: Path) -> None:
         tarball_path (Path): The path where the downloaded tarball should be saved.
     """
 
-    tarball_path = hf_hub_download(
+    hf_tarball_path = hf_hub_download(
         repo_id="gbouras13/baktfold-db",
         repo_type="dataset",
         filename="baktfold_db.tar.gz"  ,
         cache_dir=f"{cache_dir}"
     )
+    # move from cache_dir to the base
+    shutil.move(hf_tarball_path, tarball_path)
 
     logger.info(f"Tarball saved to {tarball_path}")
 
