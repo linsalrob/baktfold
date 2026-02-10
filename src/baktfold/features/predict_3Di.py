@@ -174,8 +174,16 @@ def get_T5_model(
 
     model = model.eval()
     vocab = T5Tokenizer.from_pretrained(
-        model_name, cache_dir=f"{model_dir}/", do_lower_case=False
+        model_name, cache_dir=f"{model_dir}/", do_lower_case=False,
+        use_fast=False
     )
+    
+    model = T5EncoderModel.from_pretrained(
+                model_name,
+                cache_dir=f"{model_dir}/",
+                force_download=False,
+                local_files_only=True,
+            ).to(device)
 
     logger.info(f"{model_name} loaded")
 
