@@ -461,6 +461,7 @@ def write_genbank(
                             transl_table = "11"
                     else:
                         try:
+                            print(cds_feature.qualifiers["transl_table"])
                             transl_table = cds_feature.qualifiers["transl_table"][0]
                         except:
                             # for older pharokka input before v1.5.0
