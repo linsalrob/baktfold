@@ -37,7 +37,7 @@ def write_foldseek_tophit(tophit_df: pd.DataFrame, pdb_tophit_path: Path):
 
 def write_bakta_outputs(data: dict, features: Sequence[dict], features_by_sequence: Sequence[dict] , 
                         output: Path, prefix: str, custom_db: bool, euk: bool, has_duplicate_locus: bool,
-                        fast: bool, translation_table: str):
+                        fast: bool, translation_table: int):
     """
     Writes the bakta outputs to a given path.
 

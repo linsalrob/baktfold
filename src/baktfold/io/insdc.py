@@ -474,7 +474,7 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka, 
 
 
 def write_features(data: dict, features: Sequence[dict], genbank_output_path: Path, embl_output_path: Path, prokka: bool = False, euk: bool = False, 
-                   translation_table: str = "11"):
+                   translation_table: int = 11):
     logger.info(f'prepare: genbank={genbank_output_path}, embl={embl_output_path}')
 
     # fix later
