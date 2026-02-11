@@ -97,10 +97,17 @@ def parse_json_input(input_path, faa_path, all_proteins):
             for feat in hypotheticals:
                 fh.write(f">{feat['locus']}\n{feat['aa']}\n")
 
+    # to get translation table - if it doesn't have this, bakta error
+    try:
+        genome_block = data['genome']
+        translation_table = genome_block['translation_table']
+        cfg.translation_table = translation_table
+    except:
+        logger.error("No translation table found in input .json file. Please check.")
 
     logger.info('Parsing complete')
 
-    return data, features, has_duplicate_locus
+    return data, features, has_duplicate_locus, translation_table
 
 
     

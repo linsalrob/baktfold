@@ -354,7 +354,7 @@ def run(
     ###
 
     fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
-    data, features, has_duplicate_locus = parse_json_input(input, fasta_aa, all_proteins)
+    data, features, has_duplicate_locus, translation_table = parse_json_input(input, fasta_aa, all_proteins)
 
     ###
     # split features in hypotheticals and non hypotheticals
@@ -515,7 +515,7 @@ def run(
 
 
     logger.info('writing baktfold outputs')
-    io.write_bakta_outputs(data, features, features_by_sequence, output, prefix, custom_db, euk, has_duplicate_locus, fast)
+    io.write_bakta_outputs(data, features, features_by_sequence, output, prefix, custom_db, euk, has_duplicate_locus, fast, translation_table)
 
     # cleanup the temp files
     if not keep_tmp_files:
@@ -827,7 +827,7 @@ def predict(
     ###
 
     fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
-    data, features, has_duplicate_locus = parse_json_input(input, fasta_aa, all_proteins)
+    data, features, has_duplicate_locus, translation_table = parse_json_input(input, fasta_aa, all_proteins)
 
     ###
     # split features in hypotheticals and non hypotheticals
@@ -1028,7 +1028,7 @@ def compare(
     ###
 
     fasta_aa: Path = Path(output) / f"{prefix}_aa.fasta"
-    data, features, has_duplicate_locus = parse_json_input(input, fasta_aa, all_proteins)
+    data, features, has_duplicate_locus, translation_table = parse_json_input(input, fasta_aa, all_proteins)
 
     ###
     # split features in hypotheticals and non hypotheticals
