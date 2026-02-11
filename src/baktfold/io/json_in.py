@@ -100,7 +100,7 @@ def parse_json_input(input_path, faa_path, all_proteins):
     # to get translation table - if it doesn't have this, bakta error
     try:
         genome_block = data['genome']
-        translation_table = genome_block["translation_table"]
+        translation_table = str(genome_block["translation_table"])
         logger.info(f"Translation table {translation_table} detected from input JSON")
     except:
         logger.error("No translation table found in input .json file. Please check.")

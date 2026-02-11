@@ -215,7 +215,7 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka, 
                 qualifiers['codon_start'] = 1
 
                 # add translation table
-                qualifiers['translation_table'] = "translation_table"
+                qualifiers['translation_table'] = translation_table
                 insdc_feature_type = bc.INSDC_FEATURE_CDS
                 inference = []
                 if(feature['type'] == bc.FEATURE_CDS):
@@ -473,7 +473,8 @@ def build_biopython_sequence_list(data: dict, features: Sequence[dict], prokka, 
     return sequence_list
 
 
-def write_features(data: dict, features: Sequence[dict], genbank_output_path: Path, embl_output_path: Path, prokka: bool = False, euk: bool = False, translation_table: str = "11"):
+def write_features(data: dict, features: Sequence[dict], genbank_output_path: Path, embl_output_path: Path, prokka: bool = False, euk: bool = False, 
+                   translation_table: str = "11"):
     logger.info(f'prepare: genbank={genbank_output_path}, embl={embl_output_path}')
 
     # fix later
